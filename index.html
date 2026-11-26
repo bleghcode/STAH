@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#C2185B">
+<script>(function () { try { var t = localStorage.getItem('tcs:v1:theme'); if (!t && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark'; if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); } catch (e) {} })();</script>
+<title>Hotel Booking Status Report</title>
+<style>
+    /* Hotel Booking Status Report: โครงสร้างจาก Walk-in Cost Report, หัวสีชมพู, ฟอนต์ Segoe UI */
+    :root {
+        --brand: #C2185B; --brand-d: #A01249; --brand-t: #C2185B; --tint: #FDEBF3; --dark: #4A1230;
+        --bg: #F6F2F4; --card: #fff; --text: #1f2937; --muted: #6b7280; --faint: #9ca3af;
+        --line: #e5e7eb; --soft: #f3f4f6; --hover: rgba(0,0,0,.04); --focus: rgba(194,24,91,.10);
+        --field: #fff; --fieldline: #d1d5db; --act: #fbeaf1;
+    }
+    @media screen {
+        html[data-theme="dark"] {
+            color-scheme: dark; --brand-t: #F48FB1; --tint: #3a1c2b; --dark: #f5dbe6;
+            --bg: #111418; --card: #1b2027; --text: #e5e7eb; --muted: #9ca3af; --faint: #8b95a1;
+            --line: #2f3640; --soft: #2a3038; --hover: rgba(255,255,255,.06); --focus: rgba(244,143,177,.18);
+            --field: #1f252d; --fieldline: #3a424d; --act: #3a1c2b;
+        }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+        font-family: 'Segoe UI', 'Leelawadee UI', 'Tahoma', 'Thonburi', 'Noto Sans Thai', system-ui, sans-serif;
+        -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
+        background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5;
+    }
+    button, select { font-family: inherit; cursor: pointer; }
+    h1 { margin: 0; }
+    input, [contenteditable] {
+        border: none; outline: none; background: transparent; width: 100%;
+        font: inherit; color: inherit; padding: 0; margin: 0; transition: background-color .2s;
+    }
+    input:hover:not(:focus), [contenteditable]:hover:not(:focus) { background-color: var(--hover); border-radius: 4px; }
+    input:focus, [contenteditable]:focus { background-color: var(--focus); border-radius: 4px; }
+    input::placeholder { color: var(--faint); }
+
+    .app { display: flex; min-height: 100vh; }
+    .sidebar { width: 290px; flex: none; background: var(--card); border-right: 1px solid var(--line); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; }
+    .sb-head { padding: 14px 14px 10px; border-bottom: 1px solid var(--soft); }
+    .sb-title { font-weight: 700; font-size: 16px; color: var(--brand-t); margin-bottom: 10px; }
+    .btn { border: 1px solid transparent; border-radius: 6px; padding: 7px 12px; font-size: 13px; font-weight: 600; transition: background .15s; }
+    .btn-primary { background: var(--brand); color: #fff; }
+    .btn-primary:hover { background: var(--brand-d); }
+    .btn-ghost { background: var(--field); border-color: var(--fieldline); color: var(--text); }
+    .btn-ghost:hover { background: var(--hover); }
+    .btn-block { width: 100%; }
+    .search { margin-top: 8px; border: 1px solid var(--fieldline) !important; border-radius: 6px; padding: 6px 10px !important; background: var(--field) !important; font-size: 13px; }
+    .doc-list { flex: 1; overflow-y: auto; padding: 8px; }
+    .doc-item { border: 1px solid transparent; border-radius: 8px; padding: 9px 10px; cursor: pointer; margin-bottom: 4px; }
+    .doc-item:hover { background: var(--hover); }
+    .doc-item.active { background: var(--act); border-color: var(--brand-t); }
+    .di-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+    .di-ref { font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .di-total { font-weight: 600; color: var(--brand-t); font-size: 12px; white-space: nowrap; }
+    .di-name { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .di-meta { font-size: 11px; color: var(--faint); display: flex; justify-content: space-between; gap: 6px; align-items: center; margin-top: 2px; }
+    .di-actions button { background: none; border: none; color: var(--muted); font-size: 11px; padding: 2px 4px; border-radius: 4px; }
+    .di-actions button:hover { background: var(--soft); }
+    .di-actions .del:hover { background: #fee2e2; color: #b91c1c; }
+    .list-empty { text-align: center; color: var(--faint); padding: 24px 8px; font-size: 13px; }
+    .sb-foot { border-top: 1px solid var(--soft); padding: 10px 14px 14px; display: grid; gap: 6px; }
+    .sb-note { font-size: 11px; color: var(--muted); line-height: 1.4; }
+    .sb-note.warn { color: #b45309; }
+
+    .main { flex: 1; min-width: 0; padding: 0 16px 32px; }
+    .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 8px; padding: 10px 0 6px; background: var(--bg); }
+    .topbar .spacer { flex: 1; }
+    .menu-btn { display: none; }
+    .status { font-size: 12px; color: var(--muted); }
+    .status.ok::before { content: "●"; color: #16a34a; margin-right: 5px; }
+    .status.bad { color: #b91c1c; font-weight: 600; }
+    .filters { position: sticky; top: 50px; z-index: 19; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding: 0 0 8px; background: var(--bg); max-width: 210mm; margin: 0 auto; font-size: 12px; color: var(--muted); }
+    .chip { border: 1px solid var(--fieldline); background: var(--field); color: var(--text); border-radius: 999px; padding: 3px 11px; font-size: 12px; }
+    .chip.active { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
+    .banner { max-width: 210mm; margin: 0 auto 10px; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 8px; padding: 10px 14px; font-size: 13px; }
+    .banner[hidden] { display: none; }
+    .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 90; background: #1f2937; color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 13px; box-shadow: 0 6px 20px rgba(0,0,0,.25); display: flex; gap: 14px; align-items: center; max-width: 92vw; }
+    .toast[hidden] { display: none; }
+    .toast button { background: none; border: none; color: #fbbf24; font-weight: 700; font-size: 13px; padding: 0; }
+    .backdrop { display: none; }
+
+    /* ---------- แผ่นรายงาน ---------- */
+    .sheet { max-width: 210mm; margin: 0 auto; background: var(--card); padding: 2rem; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,.1), 0 4px 10px -6px rgba(0,0,0,.1); }
+    .doc-head { display: flex; justify-content: space-between; align-items: flex-start; padding: 1.5rem 0 1rem; }
+    .doc-head .left { flex: 1; min-width: 0; padding-right: 1rem; }
+    .doc-head .right { flex: none; text-align: right; }
+    #company-name-input { font-size: 1.5rem; font-weight: 700; color: var(--brand-t); text-transform: uppercase; margin-bottom: .25rem; line-height: 1.5; }
+    #address { color: var(--muted); line-height: 1.6; font-size: .75rem; white-space: pre-line; }
+    .doc-title { font-size: 1.3rem; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: .04em; margin-bottom: .5rem; }
+    .meta-row { display: flex; justify-content: flex-end; gap: .5rem; font-size: .8rem; color: var(--muted); }
+    .meta-row + .meta-row { margin-top: .25rem; }
+    .meta-row .lbl { font-weight: 600; }
+    .w-32 { width: 8rem; } .text-right { text-align: right; }
+    .divider { border-bottom: 2px solid var(--brand); margin-bottom: 1rem; }
+    .period { display: flex; align-items: center; gap: .25rem; flex-wrap: wrap; margin-bottom: .75rem; font-weight: 700; font-size: 1rem; }
+    .period .lbl { font-size: .75rem; color: var(--faint); text-transform: uppercase; letter-spacing: .05em; margin-right: .5rem; }
+    .date-box { border-bottom: 1px dashed var(--fieldline); text-align: center; }
+    .px-1 { padding: 0 .25rem; }
+    .filter-note { display: none; margin-bottom: .5rem; font-size: .8rem; font-weight: 600; color: var(--brand-t); }
+    .filter-note.on { display: block; }
+
+    .cols { display: grid; grid-template-columns: 1fr 28% 8.5rem 3.8rem; background: var(--brand); color: #fff; border-radius: 3px; margin-bottom: .75rem; }
+    .cols div { padding: .6rem .75rem; font-weight: 700; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
+
+    .entry { border: 1px solid var(--line); border-radius: 8px; margin-bottom: 1rem; overflow: hidden; background: var(--card); }
+    .entry.hide, .city.hide, .h-row.hide { display: none !important; }
+    .entry-bar { display: flex; align-items: center; gap: .5rem; background: var(--tint); border-left: 4px solid var(--brand); padding: .5rem .75rem; }
+    .e-no { width: 2.4rem; flex: none; text-align: center; color: var(--brand-t); font-size: 1rem; font-weight: 700; }
+    .e-name { flex: 1; font-size: 1.05rem; font-weight: 700; color: var(--dark); }
+    .e-sum { white-space: nowrap; font-size: .75rem; font-weight: 700; color: var(--brand-t); }
+    .e-sum.all { color: #14612C; background: #D7F2DF; border-radius: 999px; padding: 1px 9px; }
+    .e-del, .c-del { background: none; border: none; color: #ef4444; font-size: 1.2rem; line-height: 1; padding: 0 .25rem; opacity: .4; border-radius: 4px; }
+    .e-del:hover, .c-del:hover { opacity: 1; background: #fee2e2; }
+    .entry-meta { display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; align-items: center; padding: .35rem .75rem .35rem 1rem; font-size: .78rem; color: var(--muted); border-bottom: 1px solid var(--soft); }
+    .entry-meta b { margin-right: .3rem; }
+    .m-item { display: inline-flex; align-items: center; }
+    .m-pax input { width: 5rem; border-bottom: 1px dashed var(--fieldline); }
+    .m-rem { flex: 1; min-width: 10rem; } .m-rem input { border-bottom: 1px dashed var(--fieldline); }
+
+    .city { border-bottom: 1px solid var(--soft); break-inside: avoid; page-break-inside: avoid; }
+    .city-bar { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; padding: .45rem .75rem .35rem 1rem; }
+    .c-name { width: 11rem; flex: none; font-weight: 700; color: var(--brand-t); font-size: .95rem; }
+    .c-dates { display: inline-flex; align-items: center; gap: .1rem; font-size: .8rem; color: var(--muted); flex: 1; }
+    .c-dates b { margin-right: .35rem; }
+    .c-dates .date-box { width: 1.8rem; }
+    .d-end { display: inline-flex; align-items: center; gap: .1rem; } .d-sep { padding: 0 .25rem; }
+    .btn-add { background: var(--act); color: var(--brand-t); border: 1px solid var(--brand-t); border-radius: 4px; padding: .1rem .55rem; font-size: .75rem; }
+    .btn-add:hover { background: var(--tint); }
+
+    .hotels { padding-bottom: .25rem; }
+    .h-row { display: grid; grid-template-columns: 1fr 28% 8.5rem 3.8rem; align-items: center; position: relative; border-top: 1px solid var(--soft); break-inside: avoid; }
+    .h-row > * { padding: .3rem .75rem; min-width: 0; }
+    .h-row > input { padding: .35rem .75rem; }
+    .h-name { font-weight: 600; }
+    @media screen { .h-row > input.h-name { padding-left: 1.5rem; } }
+    .h-note { color: var(--muted); font-size: .85rem; }
+    .btn-remove { position: absolute; left: -2px; top: 50%; transform: translateY(-50%); padding: 0 !important; color: #ef4444; cursor: pointer; font-size: 1.1rem; font-weight: bold; width: 18px; height: 20px; line-height: 20px; text-align: center; opacity: .3; }
+    .btn-remove:hover { opacity: 1; }
+    .hist-btn { background: none; border: none; font-size: .75rem; color: var(--muted); border-radius: 4px; white-space: nowrap; }
+    .hist-btn:hover { background: var(--tint); color: var(--brand-t); }
+    .add-city { display: block; width: 100%; padding: .45rem; border: none; border-top: 1px dashed var(--fieldline); background: transparent; color: var(--brand-t); font-weight: 600; font-size: .8rem; }
+    .add-city:hover { background: var(--tint); }
+    .add-entry { display: block; width: 100%; margin: 0 0 1rem; padding: .6rem; border: 2px dashed var(--brand-t); border-radius: 8px; background: var(--act); color: var(--brand-t); font-weight: 700; font-size: .9rem; }
+    .add-entry:hover { background: var(--tint); }
+
+    /* ป้ายสถานะ */
+    .st { border: 1px solid transparent; border-radius: 6px; padding: .25rem .4rem; font-size: .82rem; font-weight: 700; width: 100%; appearance: auto; }
+    .st-print { display: none; }
+    .b-none { background: var(--field); color: var(--muted); border-color: var(--fieldline); font-weight: 400; }
+    .b-booked { background: #FFF1C2; color: #7A5200; }
+    .b-cfm { background: #D7F2DF; color: #14612C; }
+    .b-fully { background: #FDD9DB; color: #9B1C28; }
+    .b-cancel { background: #E5E7EB; color: #4B5563; }
+    .b-note { background: var(--soft); color: var(--muted); }
+    .badge { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: .75rem; font-weight: 700; }
+    .st option { background: var(--card); color: var(--text); font-weight: 400; }
+
+    table.sum { width: 100%; border-collapse: collapse; margin-top: .5rem; }
+    .sum td { padding: .4rem 1rem; text-align: right; border-bottom: 1px solid var(--soft); }
+    .sum td:first-child { text-align: left; }
+    .grand { background: var(--brand); color: #fff; font-weight: 700; font-size: 1rem; }
+    .sum .grand td { padding: .9rem 1rem; border-bottom: none; }
+    .grand td:first-child { text-transform: uppercase; letter-spacing: .025em; }
+    .doc-foot { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 10px; color: var(--faint); }
+    .help { max-width: 210mm; margin: 16px auto 0; font-size: .75rem; color: var(--brand-t); text-align: center; background: var(--act); padding: 1rem; border-radius: 8px; border: 1px solid var(--tint); line-height: 1.7; }
+
+    .ac-pop { position: absolute; z-index: 70; background: var(--card); border: 1px solid var(--fieldline); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.15); max-height: 260px; overflow-y: auto; padding: 4px; font-size: 13px; color: var(--text); font-weight: 400; }
+    .ac-pop[hidden] { display: none; }
+    .ac-item { padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+    .ac-item:hover, .ac-item.sel { background: var(--tint); }
+    .ac-item.add { color: var(--brand-t); font-weight: 600; }
+    .ac-item.hint { color: var(--faint); cursor: default; }
+
+    .modal-back { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 80; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .modal-back[hidden] { display: none; }
+    .modal { background: var(--card); color: var(--text); border-radius: 12px; width: min(580px, 100%); max-height: 88vh; display: flex; flex-direction: column; padding: 16px; gap: 10px; box-shadow: 0 20px 50px rgba(0,0,0,.3); }
+    .modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; font-size: 15px; }
+    .modal-head small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; }
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tab { border: 1px solid var(--fieldline); background: var(--field); color: var(--text); border-radius: 999px; padding: 5px 12px; font-size: 13px; }
+    .tab.active { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
+    .m-add { display: flex; gap: 8px; flex-wrap: wrap; }
+    .m-add input, .m-add select, .m-bulk textarea, .m-row input { border: 1px solid var(--fieldline) !important; border-radius: 6px; padding: 6px 10px !important; background: var(--field) !important; font-size: 13px; color: var(--text); }
+    .m-add input { flex: 1; min-width: 8rem; width: auto; } .m-add input[type=date] { flex: none; }
+    .m-bulk summary { cursor: pointer; font-size: 12px; color: var(--muted); }
+    .m-bulk textarea { width: 100%; display: block; margin: 6px 0; font-family: inherit; }
+    .m-list { flex: 1; overflow-y: auto; min-height: 120px; border-top: 1px solid var(--soft); padding-top: 6px; }
+    .m-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+    .m-row input { flex: 1; }
+    .m-del { background: none; border: none; color: #ef4444; font-size: 18px; line-height: 1; padding: 2px 6px; border-radius: 4px; }
+    .m-del:hover { background: #fee2e2; }
+    .h-item { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; border-bottom: 1px solid var(--soft); font-size: 13px; }
+    .h-item .when { width: 8.6rem; flex: none; color: var(--muted); font-size: 12px; padding-top: 2px; }
+    .h-item .what { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
+    @media (max-width: 899px) {
+        .sidebar { position: fixed; left: 0; top: 0; z-index: 50; transform: translateX(-100%); transition: transform .2s; }
+        .sidebar.open { transform: none; box-shadow: 4px 0 20px rgba(0,0,0,.2); }
+        .backdrop.open { display: block; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 40; }
+        .menu-btn { display: inline-block; }
+        .main { padding: 0 8px 32px; }
+    }
+    @media (max-width: 640px) {
+        .sheet { padding: 1.1rem 1.1rem 1.1rem 1.5rem; }
+        .doc-head { flex-direction: column; gap: .75rem; }
+        .doc-head .left, .doc-head .right { width: 100%; text-align: left; padding-right: 0; }
+        .meta-row { justify-content: flex-start; } .meta-row input { text-align: left; }
+        .cols { display: none; }
+        .topbar .btn { white-space: nowrap; padding: 7px 9px; } .status { display: none; }
+        .h-row { grid-template-columns: 1fr 8rem 3.8rem; }
+        .h-row .h-note { grid-column: 1 / 2; grid-row: 2; padding-top: 0; } 
+        .h-row .st { grid-column: 2; grid-row: 1; } .h-row .hist-btn { grid-column: 3; grid-row: 1; }
+        .c-name { width: 100%; }
+    }
+
+    /* ---------- พิมพ์ / Save as PDF ---------- */
+    @media print {
+        .no-print { display: none !important; }
+        body { background: #fff; }
+        #company-name-input { font-size: 1.2rem !important; }
+        .doc-title { font-size: 1.15rem; }
+        .app { display: block; } .main { padding: 0; }
+        .sheet { box-shadow: none !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; border-radius: 0; }
+        @page { size: A4 portrait; margin: 10mm; }
+        input::placeholder, [contenteditable]:empty::before { color: transparent !important; }
+        .date-box, .m-pax input, .m-rem input { border-bottom-color: transparent; }
+        input:hover, [contenteditable]:hover { background: transparent !important; }
+        .st { display: none !important; }
+        .st-print { display: inline-block; padding: 1px 10px; border-radius: 999px; font-size: .8rem; font-weight: 700; }
+        .st-print.b-none { display: none; }
+        .cols, .h-row { grid-template-columns: 1fr 28% 8.5rem; }
+        .e-sum.all { background: transparent; }
+        .c-dates:not(:has(input:not(:placeholder-shown))) { visibility: hidden; }
+        .d-end:not(:has(input:not(:placeholder-shown))) { display: none; }
+        .m-item:has(input:placeholder-shown) { display: none; }
+        .entry-meta:not(:has(input:not(:placeholder-shown))) { display: none; }
+        .entry { break-inside: auto; }
+    }
+</style>
+</head>
+<body>
+<div class="app">
+
+    <aside class="sidebar no-print" id="sidebar">
+        <div class="sb-head">
+            <div class="sb-title">Hotel Status Report</div>
+            <button class="btn btn-primary btn-block" id="btn-new">+ รายงานใหม่</button>
+            <input type="search" id="search" class="search" placeholder="ค้นหา Week / ลูกค้า / โรงแรม">
+        </div>
+        <div class="doc-list" id="doc-list"></div>
+        <div class="sb-foot">
+            <button class="btn btn-ghost btn-block" id="btn-manage">📋 จัดการรายชื่อ (โรงแรม / เมือง)</button>
+            <button class="btn btn-ghost btn-block" id="btn-export-all">สำรองข้อมูลทั้งหมด (.json)</button>
+            <button class="btn btn-ghost btn-block" id="btn-import">นำเข้าจากไฟล์สำรอง</button>
+            <input type="file" id="import-file" accept=".json,application/json" hidden>
+            <div class="sb-note" id="backup-note"></div>
+            <div class="sb-note" id="app-version"></div>
+        </div>
+    </aside>
+    <div class="backdrop no-print" id="backdrop"></div>
+
+    <main class="main">
+        <div class="topbar no-print">
+            <button class="btn btn-ghost menu-btn" id="btn-menu">☰ รายการ</button>
+            <span class="status ok" id="status">พร้อมใช้งาน</span>
+            <span class="spacer"></span>
+            <button class="btn btn-ghost" id="theme-btn">🌙 Dark</button>
+            <button class="btn btn-ghost" id="btn-export-cur">Export รายงานนี้</button>
+            <button class="btn btn-primary" id="btn-print">🖨 Save as PDF</button>
+        </div>
+        <div class="filters no-print" id="filters"></div>
+        <div class="banner no-print" id="storage-banner" hidden>
+            ⚠ เบราว์เซอร์นี้ไม่ยอมให้เก็บข้อมูลในเครื่อง ข้อมูลจะหายเมื่อปิดหน้า กรุณากดสำรองข้อมูลเป็นไฟล์ก่อนปิด
+        </div>
+
+        <div class="sheet" id="sheet">
+            <div class="doc-head">
+                <div class="left">
+                    <input type="text" id="company-name-input" placeholder="COMPANY NAME">
+                    <div contenteditable="true" id="address"></div>
+                </div>
+                <div class="right">
+                    <h1 class="doc-title">Hotel Booking Status Report</h1>
+                    <div class="meta-row"><span class="lbl">Week:</span><input type="text" class="w-32 text-right" id="week-input" placeholder="Week 1"></div>
+                    <div class="meta-row"><span class="lbl">Date:</span><input type="text" class="w-32 text-right" id="current-date"></div>
+                </div>
+            </div>
+            <div class="divider"></div>
+
+            <div class="period">
+                <span class="lbl">Report Period</span>
+                <input type="text" inputmode="numeric" maxlength="2" class="date-box" data-p="0" style="width:2.25rem" placeholder="DD">
+                <span>/</span>
+                <input type="text" inputmode="numeric" maxlength="2" class="date-box" data-p="1" style="width:2.25rem" placeholder="MM">
+                <span class="px-1">-</span>
+                <input type="text" inputmode="numeric" maxlength="2" class="date-box" data-p="2" style="width:2.25rem" placeholder="DD">
+                <span>/</span>
+                <input type="text" inputmode="numeric" maxlength="2" class="date-box" data-p="3" style="width:2.25rem" placeholder="MM">
+                <span class="px-1">-</span>
+                <input type="text" inputmode="numeric" maxlength="4" class="date-box" data-p="4" style="width:3.5rem" placeholder="YYYY">
+            </div>
+            <div class="filter-note" id="filter-note"></div>
+
+            <div class="cols"><div>Group / Hotel</div><div>Note</div><div>Status</div><div class="no-print"></div></div>
+
+            <div id="entries"></div>
+            <button class="add-entry no-print" data-act="add-entry">+ ADD NEW GROUP</button>
+
+            <table class="sum">
+                <tbody id="sum-rows"></tbody>
+                <tbody><tr class="grand"><td>Total Hotel Bookings</td><td><span id="t_grand">0</span></td></tr></tbody>
+            </table>
+
+            <div class="doc-foot"><div id="footer-company"></div><div id="footer-count"></div></div>
+        </div>
+
+        <div class="help no-print">
+            💡 <b>วิธีใช้:</b> 1 รายงาน = 1 สัปดาห์ · <b>+ ADD NEW GROUP</b> เพิ่มกลุ่มลูกค้า · ในกลุ่มกด <b>+ เพิ่มเมือง</b> (Bangkok / Pattaya / Phuket ได้หลายเมือง) แล้วกด <b>+ Hotel</b> เพิ่มโรงแรม
+            <br>เลือกสถานะที่ช่อง Status (Booked = จองแล้วรอตอบ · CFM = ยืนยันแล้ว · Fully = เต็ม · Cancelled = ยกเลิก) ระบบบันทึกประวัติพร้อมวัน-เวลาให้อัตโนมัติ · กด <b>🕘</b> เพื่อดู/เพิ่มหมายเหตุประวัติการจอง (ประวัติไม่ถูกพิมพ์ลง PDF)
+            <br>ปุ่มกรองด้านบน (Booked / CFM / Fully …) ใช้ดูหรือพิมพ์เฉพาะรายการสถานะนั้น · ลบอะไรไปกด “ย้อนกลับ” ได้ · ⚠ ข้อมูลอยู่ในเบราว์เซอร์นี้เท่านั้น ควรกด “สำรองข้อมูลทั้งหมด” เป็นระยะ
+        </div>
+    </main>
+</div>
+
+<!-- จัดการรายชื่อ -->
+<div class="modal-back no-print" id="manage-modal" hidden>
+    <div class="modal">
+        <div class="modal-head"><b>จัดการรายชื่อ<small>รายชื่อโรงแรมใช้ร่วมกับ Cost Summary (ถ้าเปิดจากที่เดียวกัน)</small></b><button class="btn btn-ghost" id="manage-close">ปิด</button></div>
+        <div class="tabs" id="manage-tabs"></div>
+        <div class="m-add">
+            <input type="text" id="manage-new" placeholder="พิมพ์ชื่อ แล้วกด Enter เพื่อเพิ่ม" autocomplete="off">
+            <button class="btn btn-primary" id="manage-add">เพิ่ม</button>
+        </div>
+        <details class="m-bulk">
+            <summary>เพิ่มทีละหลายรายการ (วางจาก Excel ได้ บรรทัดละ 1 ชื่อ)</summary>
+            <textarea id="manage-bulk" rows="5"></textarea>
+            <button class="btn btn-ghost" id="manage-bulk-add">เพิ่มทั้งหมด</button>
+        </details>
+        <div class="m-list" id="manage-list"></div>
+        <div class="sb-note">การแก้ชื่อหรือลบในหน้านี้ไม่เปลี่ยนรายงานที่ทำไปแล้ว</div>
+    </div>
+</div>
+
+<!-- ประวัติการจอง -->
+<div class="modal-back no-print" id="hist-modal" hidden>
+    <div class="modal">
+        <div class="modal-head"><b id="hist-title"></b><button class="btn btn-ghost" id="hist-close">ปิด</button></div>
+        <div class="m-list" id="hist-list"></div>
+        <div class="m-add">
+            <input type="date" id="hist-date" title="วันที่ของรายการ (ย้อนหลังได้)">
+            <select id="hist-status"></select>
+            <input type="text" id="hist-note" placeholder="หมายเหตุ เช่น ติดต่อ Reservation แล้ว / รอ CFM วันจันทร์" autocomplete="off">
+            <button class="btn btn-primary" id="hist-add">บันทึก</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast no-print" id="toast" hidden><span id="toast-msg"></span><button id="toast-act" hidden></button></div>
+
+<script>
+'use strict';
+
+/* ============ ค่าคงที่ ============ */
+const K = { docs: 'hsr:v1:docs', cur: 'hsr:v1:current', backup: 'hsr:v1:lastBackup', cities: 'hsr:v1:cities', master: 'tcs:v1:master', theme: 'tcs:v1:theme' };
+const APP_VERSION = '1.0.0';
+const ST = [
+    { k: '', l: '— Status —' }, { k: 'booked', l: 'Booked' }, { k: 'cfm', l: 'CFM' },
+    { k: 'fully', l: 'Fully' }, { k: 'cancel', l: 'Cancelled' }
+];
+const STL = {}; ST.forEach((s) => { STL[s.k] = s.l; });
+const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+const DEFAULT_COMPANY = 'INDOSIAMCEYLON INTERNATIONAL';
+const DEFAULT_ADDRESS = '94 Ratchaprarop Road, Thanon Phaya Thai, Ratchathewi, Bangkok 10400';
+const DEFAULT_CITIES = ['Bangkok', 'Pattaya', 'Phuket', 'Chiang Mai', 'Chiang Rai', 'Krabi', 'Koh Samui', 'Hua Hin', 'Ayutthaya', 'Kanchanaburi', 'Khao Yai'];
+const MAX_E = 300, MAX_C = 30, MAX_H = 60, MAX_HIST = 300;
+const MKEYS = ['sec-acc', 'sec-tour', 'sec-trans', 'sec-other'];
+
+let D = null;                 // รายงานที่เปิดอยู่
+let docs = {};
+let loading = false, storageOk = true, dirty = false, loadedAt = 0, lastSize = 0, sizeWarned = false;
+let saveTimer = null, FILTER = 'all';
+let HM = null;                // ตำแหน่งที่เปิดประวัติอยู่ {e,c,h}
+let MASTER = null, CITIES = [];
+
+const $ = (id) => document.getElementById(id);
+const str = (v) => (v == null ? '' : String(v));
+const isTrue = (x) => !!x;
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+function fmtDT(ts) {
+    const t = new Date(ts || Date.now());
+    return t.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + t.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+function shortTime(ts) {
+    const t = new Date(ts || Date.now());
+    return t.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' + t.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+function todayISO() { const t = new Date(); return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); }
+
+/* ============ ที่เก็บข้อมูล ============ */
+function readStore() {
+    let raw = null;
+    try { raw = localStorage.getItem(K.docs); } catch (e) { storageOk = false; return {}; }
+    if (!raw) return {};
+    try { const o = JSON.parse(raw); return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {}; }
+    catch (e) { try { localStorage.setItem(K.docs + '.corrupt', raw); } catch (_) {} toast('ข้อมูลที่เก็บไว้อ่านไม่ได้ เก็บสำเนาไว้แล้ว'); return {}; }
+}
+function writeStore(obj) {
+    try { const s = JSON.stringify(obj); localStorage.setItem(K.docs, s); lastSize = s.length; storageOk = true; return true; }
+    catch (e) { storageOk = false; return false; }
+}
+function mutate(fn) { const s = readStore(); fn(s); const ok = writeStore(s); docs = ok ? s : Object.assign(docs, s); return ok; }
+
+/* ============ โครงสร้างข้อมูล ============ */
+function newHotel() { return { h: '', n: '', s: '', hist: [] }; }
+function newCity() { return { c: '', from: ['', ''], to: ['', ''], hotels: [newHotel()] }; }
+function newEntry(no) { return { no: str(no), name: '', pax: '', remark: '', cities: [newCity()] }; }
+function blankDoc() {
+    return {
+        id: newId(), createdAt: Date.now(), updatedAt: Date.now(), company: DEFAULT_COMPANY, address: DEFAULT_ADDRESS,
+        date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+        week: '', period: ['', '', '', '', String(new Date().getFullYear())], entries: [newEntry('1')]
+    };
+}
+const hotelBlank = (h) => !h.h.trim() && !h.n.trim() && !h.s && !h.hist.length;
+const cityBlank = (c) => !c.c.trim() && ![].concat(c.from, c.to).some((x) => x.trim()) && c.hotels.every(hotelBlank);
+const entryBlank = (e) => !e.name.trim() && !e.pax.trim() && !e.remark.trim() && e.cities.every(cityBlank);
+function isBlank(d) {
+    if (!d) return false;
+    if ((d.week || '').trim()) return false;
+    if ([0, 1, 2, 3].some((i) => ((d.period || [])[i] || '').trim())) return false;
+    return d.entries.every(entryBlank);
+}
+function stats(d) {
+    const c = { booked: 0, cfm: 0, fully: 0, cancel: 0, none: 0, total: 0 };
+    d.entries.forEach((e) => e.cities.forEach((ct) => ct.hotels.forEach((h) => {
+        if (!h.h.trim() && !h.s) return;
+        c.total++; c[h.s || 'none']++;
+    })));
+    return c;
+}
+function recompute(h) { const a = h.hist.filter((x) => x.s !== '~'); if (a.length) h.s = a[a.length - 1].s; }
+
+function pair(a) { a = Array.isArray(a) ? a : []; return [str(a[0]).slice(0, 2), str(a[1]).slice(0, 2)]; }
+function normalizeDoc(x) {
+    if (!x || typeof x !== 'object' || !Array.isArray(x.entries)) return null;
+    const idv = str(x.id);
+    const out = {
+        id: (idv && !/^(__proto__|constructor|prototype)$/.test(idv)) ? idv : newId(),
+        createdAt: Number(x.createdAt) || Date.now(), updatedAt: Number(x.updatedAt) || Date.now(),
+        company: str(x.company), address: str(x.address), date: str(x.date), week: str(x.week),
+        period: [0, 1, 2, 3, 4].map((i) => str(Array.isArray(x.period) ? x.period[i] : '').slice(0, i === 4 ? 4 : 2)), entries: []
+    };
+    x.entries.slice(0, MAX_E).forEach((e) => {
+        if (!e || typeof e !== 'object') return;
+        const ne = { no: str(e.no), name: str(e.name), pax: str(e.pax), remark: str(e.remark), cities: [] };
+        (Array.isArray(e.cities) ? e.cities : []).slice(0, MAX_C).forEach((c) => {
+            if (!c || typeof c !== 'object') return;
+            const nc = { c: str(c.c), from: pair(c.from), to: pair(c.to), hotels: [] };
+            (Array.isArray(c.hotels) ? c.hotels : []).slice(0, MAX_H).forEach((h) => {
+                if (!h || typeof h !== 'object') return;
+                const s = str(h.s);
+                const nh = { h: str(h.h), n: str(h.n), s: has(STL, s) ? s : '', hist: [] };
+                (Array.isArray(h.hist) ? h.hist : []).slice(0, MAX_HIST).forEach((z) => {
+                    if (!z || typeof z !== 'object') return;
+                    const zs = str(z.s);
+                    nh.hist.push({ t: Number(z.t) || Date.now(), s: (zs === '~' || has(STL, zs)) ? zs : '~', n: str(z.n) });
+                });
+                nh.hist.sort((a, b) => a.t - b.t);
+                nc.hotels.push(nh);
+            });
+            if (!nc.hotels.length) nc.hotels.push(newHotel());
+            ne.cities.push(nc);
+        });
+        if (!ne.cities.length) ne.cities.push(newCity());
+        out.entries.push(ne);
+    });
+    if (!out.entries.length) out.entries.push(newEntry('1'));
+    return out;
+}
+
+/* ============ วาดหน้ารายงาน ============ */
+function inp(cls, lvl, field, val, ph, max) {
+    const i = document.createElement('input');
+    i.type = 'text'; i.className = cls; i.dataset.l = lvl; i.dataset.f = field; i.value = val || ''; i.placeholder = ph || '';
+    i.autocomplete = 'off'; if (max) i.maxLength = max;
+    return i;
+}
+function actBtn(cls, act, text, title) { const b = el('button', cls + ' no-print', text); b.dataset.act = act; if (title) b.title = title; b.type = 'button'; return b; }
+function dateBox(i, v) {
+    const d = document.createElement('input');
+    d.type = 'text'; d.inputMode = 'numeric'; d.maxLength = 2; d.className = 'date-box'; d.dataset.d = String(i);
+    d.placeholder = i % 2 ? 'MM' : 'DD'; d.value = v || '';
+    return d;
+}
+function buildHotel(h, hi) {
+    const r = el('div', 'h-row'); r.dataset.h = hi; r.dataset.s = h.s || '';
+    const rm = actBtn('btn-remove', 'del-hotel', '×', 'Remove row'); rm.style.background = 'none'; rm.style.border = 'none';
+    const nm = inp('h-name', 'h', 'h', h.h, hi === 0 ? 'Hotel name (e.g., Season Siam Hotel)' : 'Hotel name'); nm.dataset.ac = 'hotel';
+    const nt = inp('h-note', 'h', 'n', h.n, 'Note');
+    const sel = document.createElement('select');
+    sel.className = 'st b-' + (h.s || 'none');
+    ST.forEach((s) => { const o = el('option', null, s.l); o.value = s.k; if (s.k === h.s) o.selected = true; sel.appendChild(o); });
+    sel.setAttribute('aria-label', 'Status');
+    const sp = el('span', 'st-print b-' + (h.s || 'none'), STL[h.s] || '');
+    const hb = actBtn('hist-btn', 'hist', '🕘' + (h.hist.length ? ' ' + h.hist.length : ''));
+    const last = h.hist.length ? h.hist[h.hist.length - 1] : null;
+    hb.title = last ? 'ประวัติ ' + h.hist.length + ' รายการ · ล่าสุด ' + (last.s === '~' ? 'Note' : (STL[last.s] || 'Cleared')) + ' ' + fmtDT(last.t) : 'ยังไม่มีประวัติ';
+    r.append(rm, nm, nt, sel, sp, hb);
+    return r;
+}
+function buildCity(c, ci) {
+    const w = el('div', 'city'); w.dataset.c = ci;
+    const bar = el('div', 'city-bar');
+    const name = inp('c-name', 'c', 'c', c.c, 'City (e.g., Bangkok)'); name.dataset.ac = 'city';
+    const dates = el('span', 'c-dates');
+    const sep = (t) => el('span', null, t);
+    const end = el('span', 'd-end'); end.append(el('span', 'd-sep', '-'), dateBox(2, c.to[0]), sep('/'), dateBox(3, c.to[1]));
+    dates.append(el('b', null, 'Date'), dateBox(0, c.from[0]), sep('/'), dateBox(1, c.from[1]), end);
+    bar.append(name, dates, actBtn('btn-add', 'add-hotel', '+ Hotel'), actBtn('c-del', 'del-city', '×', 'ลบเมืองนี้ทั้งรายการ'));
+    const box = el('div', 'hotels');
+    c.hotels.forEach((h, hi) => box.appendChild(buildHotel(h, hi)));
+    w.append(bar, box);
+    return w;
+}
+function buildEntry(e, ei) {
+    const s = el('section', 'entry'); s.dataset.e = ei;
+    const bar = el('div', 'entry-bar');
+    bar.append(inp('e-no', 'e', 'no', e.no, '#', 6), inp('e-name', 'e', 'name', e.name, 'Customer / Group name'), el('span', 'e-sum'), actBtn('e-del', 'del-entry', '×', 'ลบกลุ่มนี้ทั้งรายการ'));
+    bar.firstChild.setAttribute('aria-label', 'No.');
+    const meta = el('div', 'entry-meta');
+    const pax = el('span', 'm-item m-pax'); pax.append(el('b', null, 'Pax'), inp('', 'e', 'pax', e.pax, '—', 20));
+    const rem = el('span', 'm-item m-rem'); rem.append(el('b', null, 'Remark'), inp('', 'e', 'remark', e.remark, '—'));
+    meta.append(pax, rem);
+    const cities = el('div', 'cities');
+    e.cities.forEach((c, ci) => cities.appendChild(buildCity(c, ci)));
+    const add = actBtn('add-city', 'add-city', '+ เพิ่มเมือง (Pattaya / Phuket …)');
+    s.append(bar, meta, cities, add);
+    return s;
+}
+function render() {
+    const box = $('entries');
+    box.textContent = '';
+    D.entries.forEach((e, i) => box.appendChild(buildEntry(e, i)));
+    summary();
+}
+function updateSums() {
+    document.querySelectorAll('#entries .entry').forEach((en) => {
+        const e = D.entries[+en.dataset.e]; if (!e) return;
+        let t = 0, c = 0;
+        e.cities.forEach((ct) => ct.hotels.forEach((h) => { if (!h.h.trim() && !h.s) return; t++; if (h.s === 'cfm') c++; }));
+        const sp = en.querySelector('.e-sum');
+        sp.textContent = t ? (c === t ? '✔ ALL CFM' : 'CFM ' + c + '/' + t) : '';
+        sp.classList.toggle('all', t > 0 && c === t);
+    });
+}
+function summary() {
+    const s = stats(D);
+    const sum = $('sum-rows'); sum.textContent = '';
+    [['booked', 'Booked (waiting CFM)'], ['cfm', 'CFM'], ['fully', 'Fully'], ['cancel', 'Cancelled'], ['none', 'No status']].forEach(([k, l]) => {
+        if (!s[k]) return;
+        const tr = el('tr'); const a = el('td'); const b = el('td', null, String(s[k]));
+        if (k === 'none') a.textContent = l; else { const g = el('span', 'badge b-' + k, l); a.appendChild(g); }
+        tr.append(a, b); sum.appendChild(tr);
+    });
+    $('t_grand').textContent = String(s.total);
+    $('footer-count').textContent = D.entries.length + ' group' + (D.entries.length === 1 ? '' : 's') + ' · ' + s.total + ' hotel' + (s.total === 1 ? '' : 's');
+    $('footer-company').textContent = D.company + ' - Hotel Booking Status Report';
+    // ปุ่มกรอง
+    const f = $('filters'); f.textContent = '';
+    f.appendChild(el('span', null, 'กรอง:'));
+    [['all', 'All', s.total], ['booked', 'Booked', s.booked], ['cfm', 'CFM', s.cfm], ['fully', 'Fully', s.fully], ['cancel', 'Cancelled', s.cancel], ['none', 'No status', s.none]].forEach(([k, l, n]) => {
+        const b = el('button', 'chip' + (FILTER === k ? ' active' : ''), l + ' ' + n); b.type = 'button';
+        b.addEventListener('click', () => setFilter(k));
+        f.appendChild(b);
+    });
+    updateSums();
+    applyFilter();
+}
+function setFilter(f) { FILTER = f; summary(); }
+function applyFilter() {
+    const f = FILTER;
+    const rows = document.querySelectorAll('#entries .h-row');
+    rows.forEach((r) => { const s = r.dataset.s || ''; r.classList.toggle('hide', !(f === 'all' || (f === 'none' ? s === '' : s === f))); });
+    document.querySelectorAll('#entries .city').forEach((c) => c.classList.toggle('hide', f !== 'all' && !c.querySelector('.h-row:not(.hide)')));
+    document.querySelectorAll('#entries .entry').forEach((e) => e.classList.toggle('hide', f !== 'all' && !e.querySelector('.h-row:not(.hide)')));
+    const n = $('filter-note');
+    n.classList.toggle('on', f !== 'all');
+    n.textContent = f === 'all' ? '' : 'Filtered: ' + (f === 'none' ? 'No status' : STL[f]) + ' only';
+}
+
+/* ============ เก็บค่าจากฟอร์ม ============ */
+function ctx(t) {
+    const en = t.closest('.entry'), ci = t.closest('.city'), hr = t.closest('.h-row');
+    const e = en ? D.entries[+en.dataset.e] : null;
+    const c = (ci && e) ? e.cities[+ci.dataset.c] : null;
+    const h = (hr && c) ? c.hotels[+hr.dataset.h] : null;
+    return { en, ci, hr, e, c, h };
+}
+function groupOf(t) { return t.dataset.p !== undefined ? [...document.querySelectorAll('.period [data-p]')] : [...t.closest('.city').querySelectorAll('.date-box')]; }
+$('sheet').addEventListener('input', (e) => {
+    const t = e.target;
+    if (!D || loading) return;
+    if (t.id === 'company-name-input') { D.company = t.value; fitCompanyName(); }
+    else if (t.id === 'week-input') { D.week = t.value; updateFileTitle(); }
+    else if (t.id === 'current-date') D.date = t.value;
+    else if (t.id === 'address') D.address = t.innerText.replace(/\n{3,}/g, '\n\n').trim();
+    else if (t.classList.contains('date-box')) {
+        t.value = t.value.replace(/\D/g, '');
+        if (t.dataset.p !== undefined) { D.period[+t.dataset.p] = t.value; updateFileTitle(); }
+        else {
+            const x = ctx(t); if (!x.c) return;
+            const idx = +t.dataset.d;
+            (idx < 2 ? x.c.from : x.c.to)[idx % 2] = t.value;
+        }
+        const g = groupOf(t), i = g.indexOf(t);
+        if (t.value.length >= t.maxLength && g[i + 1]) { g[i + 1].focus(); g[i + 1].select(); }
+    } else if (t.dataset.l) {
+        const x = ctx(t), f = t.dataset.f;
+        if (t.dataset.l === 'e' && x.e) x.e[f] = t.value;
+        else if (t.dataset.l === 'c' && x.c) x.c[f] = t.value;
+        else if (t.dataset.l === 'h' && x.h) x.h[f] = t.value;
+    } else return;
+    updateSums();
+    scheduleSave();
+});
+$('sheet').addEventListener('keydown', (e) => {
+    const t = e.target;
+    if (e.key === 'Backspace' && t.classList && t.classList.contains('date-box') && t.value === '') {
+        const g = groupOf(t), i = g.indexOf(t); if (g[i - 1]) g[i - 1].focus();
+    }
+});
+$('sheet').addEventListener('focusin', (e) => { if (e.target.classList && e.target.classList.contains('date-box')) e.target.select(); });
+/* เปลี่ยนสถานะ → บันทึกประวัติอัตโนมัติ */
+$('sheet').addEventListener('change', (e) => {
+    const t = e.target;
+    if (!t.classList || !t.classList.contains('st') || !D) return;
+    const x = ctx(t); if (!x.h) return;
+    const v = has(STL, t.value) ? t.value : '';
+    if (v === x.h.s) return;
+    if (x.h.hist.length < MAX_HIST) x.h.hist.push({ t: Date.now(), s: v, n: '' });
+    x.h.s = v;
+    const row = x.hr;
+    row.dataset.s = v;
+    t.className = 'st b-' + (v || 'none');
+    const sp = row.querySelector('.st-print'); sp.className = 'st-print b-' + (v || 'none'); sp.textContent = STL[v] || '';
+    const hb = row.querySelector('.hist-btn'); hb.textContent = '🕘 ' + x.h.hist.length;
+    hb.title = 'ประวัติ ' + x.h.hist.length + ' รายการ · ล่าสุด ' + (STL[v] || 'Cleared') + ' ' + fmtDT(Date.now());
+    summary();
+    scheduleSave();
+});
+/* ปุ่มต่าง ๆ ในแผ่นรายงาน */
+function focusAt(ei, ci, hi, sel) {
+    const en = document.querySelector('#entries .entry[data-e="' + ei + '"]');
+    if (!en) return;
+    let root = en;
+    if (ci != null) root = en.querySelector('.city[data-c="' + ci + '"]') || en;
+    if (hi != null) root = root.querySelector('.h-row[data-h="' + hi + '"]') || root;
+    const i = root.querySelector(sel); if (i) i.focus();
+}
+function addEntry() {
+    if (D.entries.length >= MAX_E) { toast('เพิ่มได้ไม่เกิน ' + MAX_E + ' กลุ่มต่อรายงาน'); return; }
+    FILTER = 'all';
+    D.entries.push(newEntry(String(D.entries.length + 1)));
+    render(); scheduleSave();
+    focusAt(D.entries.length - 1, null, null, '.e-name');
+}
+function delEntry(ei) {
+    const e = D.entries.splice(ei, 1)[0];
+    if (!D.entries.length) D.entries.push(newEntry('1'));
+    render(); scheduleSave();
+    if (!entryBlank(e)) toast('ลบกลุ่มแล้ว', 'ย้อนกลับ', () => {
+        if (D.entries.length === 1 && entryBlank(D.entries[0])) D.entries = [];
+        D.entries.splice(Math.min(ei, D.entries.length), 0, e);
+        render(); scheduleSave();
+    });
+}
+function addCity(ei) {
+    const e = D.entries[ei]; if (!e) return;
+    if (e.cities.length >= MAX_C) { toast('เพิ่มได้ไม่เกิน ' + MAX_C + ' เมืองต่อกลุ่ม'); return; }
+    FILTER = 'all';
+    e.cities.push(newCity()); render(); scheduleSave();
+    focusAt(ei, e.cities.length - 1, null, '.c-name');
+}
+function delCity(ei, ci) {
+    const e = D.entries[ei]; if (!e) return;
+    const c = e.cities.splice(ci, 1)[0];
+    if (!e.cities.length) e.cities.push(newCity());
+    render(); scheduleSave();
+    if (!cityBlank(c)) toast('ลบเมือง ' + (c.c || '') + ' แล้ว', 'ย้อนกลับ', () => {
+        if (e.cities.length === 1 && cityBlank(e.cities[0])) e.cities = [];
+        e.cities.splice(Math.min(ci, e.cities.length), 0, c);
+        render(); scheduleSave();
+    });
+}
+function addHotel(ei, ci) {
+    const c = D.entries[ei] && D.entries[ei].cities[ci]; if (!c) return;
+    if (c.hotels.length >= MAX_H) { toast('เพิ่มได้ไม่เกิน ' + MAX_H + ' โรงแรมต่อเมือง'); return; }
+    FILTER = 'all';
+    c.hotels.push(newHotel()); render(); scheduleSave();
+    focusAt(ei, ci, c.hotels.length - 1, '.h-name');
+}
+function delHotel(ei, ci, hi) {
+    const c = D.entries[ei] && D.entries[ei].cities[ci]; if (!c) return;
+    const h = c.hotels.splice(hi, 1)[0];
+    if (!c.hotels.length) c.hotels.push(newHotel());
+    render(); scheduleSave();
+    if (!hotelBlank(h)) toast('ลบแถวแล้ว', 'ย้อนกลับ', () => {
+        if (c.hotels.length === 1 && hotelBlank(c.hotels[0])) c.hotels = [];
+        c.hotels.splice(Math.min(hi, c.hotels.length), 0, h);
+        render(); scheduleSave();
+    });
+}
+$('sheet').addEventListener('click', (e) => {
+    const b = e.target.closest ? e.target.closest('[data-act]') : null;
+    if (!b || !D) return;
+    const x = ctx(b), a = b.dataset.act;
+    const ei = x.en ? +x.en.dataset.e : -1, ci = x.ci ? +x.ci.dataset.c : -1, hi = x.hr ? +x.hr.dataset.h : -1;
+    if (a === 'add-entry') addEntry();
+    else if (a === 'del-entry' && x.e) delEntry(ei);
+    else if (a === 'add-city' && x.e) addCity(ei);
+    else if (a === 'del-city' && x.c) delCity(ei, ci);
+    else if (a === 'add-hotel' && x.c) addHotel(ei, ci);
+    else if (a === 'del-hotel' && x.h) delHotel(ei, ci, hi);
+    else if (a === 'hist' && x.h) openHist(ei, ci, hi);
+});
+
+/* ============ ประวัติการจอง ============ */
+function HH() {
+    if (!HM || !D) return null;
+    const e = D.entries[HM.e], c = e && e.cities[HM.c], h = c && c.hotels[HM.h];
+    return h ? { e, c, h } : null;
+}
+function openHist(ei, ci, hi) {
+    HM = { e: ei, c: ci, h: hi };
+    const sel = $('hist-status'); sel.textContent = '';
+    [['~', 'Note only (ไม่เปลี่ยนสถานะ)'], ['booked', 'Booked'], ['cfm', 'CFM'], ['fully', 'Fully'], ['cancel', 'Cancelled']].forEach(([k, l]) => { const o = el('option', null, l); o.value = k; sel.appendChild(o); });
+    $('hist-date').value = todayISO(); $('hist-note').value = '';
+    renderHist();
+    $('hist-modal').hidden = false;
+    setTimeout(() => $('hist-note').focus(), 50);
+}
+function renderHist() {
+    const x = HH(); if (!x) { $('hist-modal').hidden = true; return; }
+    const t = $('hist-title'); t.textContent = '';
+    t.append((x.h.h || '(ยังไม่ใส่ชื่อโรงแรม)') + ' ', el('small', null, (x.e.name || 'Group ' + x.e.no) + (x.c.c ? ' · ' + x.c.c : '') + ' · สถานะตอนนี้: ' + (STL[x.h.s] || '—')));
+    const box = $('hist-list'); box.textContent = '';
+    if (!x.h.hist.length) box.appendChild(el('div', 'list-empty', 'ยังไม่มีประวัติ — เปลี่ยนสถานะหรือกดบันทึกด้านล่าง'));
+    x.h.hist.map((z, i) => ({ z, i })).reverse().forEach(({ z, i }) => {
+        const row = el('div', 'h-item');
+        const when = el('span', 'when', fmtDT(z.t));
+        const what = el('span', 'what');
+        what.appendChild(el('span', 'badge ' + (z.s === '~' ? 'b-note' : 'b-' + (z.s || 'none')), z.s === '~' ? 'Note' : (STL[z.s] && z.s ? STL[z.s] : 'Cleared')));
+        if (z.n) what.appendChild(document.createTextNode('  ' + z.n));
+        const del = el('button', 'm-del', '×'); del.title = 'ลบรายการนี้'; del.type = 'button';
+        del.addEventListener('click', () => {
+            const h = x.h; const back = h.hist.splice(i, 1)[0]; const prev = h.s;
+            recompute(h);
+            render(); scheduleSave(); renderHist();
+            toast('ลบรายการประวัติแล้ว', 'ย้อนกลับ', () => { h.hist.push(back); h.hist.sort((a, b) => a.t - b.t); h.s = prev; render(); scheduleSave(); renderHist(); });
+        });
+        row.append(when, what, del);
+        box.appendChild(row);
+    });
+}
+function histAdd() {
+    const x = HH(); if (!x) return;
+    const s = $('hist-status').value, n = $('hist-note').value.trim();
+    if (s === '~' && !n) { toast('ใส่หมายเหตุก่อนบันทึก'); return; }
+    if (x.h.hist.length >= MAX_HIST) { toast('ประวัติเต็ม (' + MAX_HIST + ' รายการ)'); return; }
+    let t = Date.now();
+    const m = /^(\d{4})-(\d\d)-(\d\d)$/.exec($('hist-date').value);
+    if (m) { const now = new Date(); const d = new Date(+m[1], +m[2] - 1, +m[3], now.getHours(), now.getMinutes()); if (!isNaN(d.getTime())) t = d.getTime(); }
+    x.h.hist.push({ t, s, n });
+    x.h.hist.sort((a, b) => a.t - b.t);
+    recompute(x.h);
+    $('hist-note').value = '';
+    render(); scheduleSave(); renderHist();
+}
+$('hist-add').addEventListener('click', histAdd);
+$('hist-note').addEventListener('keydown', (e) => { if (e.key === 'Enter') histAdd(); });
+$('hist-close').addEventListener('click', () => { $('hist-modal').hidden = true; HM = null; });
+$('hist-modal').addEventListener('click', (e) => { if (e.target === $('hist-modal')) { $('hist-modal').hidden = true; HM = null; } });
+
+/* ============ บันทึกอัตโนมัติ ============ */
+function setMsg(msg, bad) { const el_ = $('status'); el_.textContent = msg; el_.className = 'status ' + (bad ? 'bad' : 'ok'); }
+function scheduleSave() {
+    if (loading || !D) return;
+    dirty = true; setMsg('กำลังบันทึก…');
+    clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 350);
+}
+function saveNow() {
+    clearTimeout(saveTimer);
+    if (loading || !D || !dirty) return;
+    let note = '';
+    const stored = readStore()[D.id];
+    if (stored && (stored.updatedAt || 0) > loadedAt) {
+        docs = readStore();
+        D.id = newId(); D.createdAt = Date.now();
+        D.week = (D.week ? D.week + ' ' : '') + '(กู้คืน)';
+        $('week-input').value = D.week;
+        try { localStorage.setItem(K.cur, D.id); } catch (e) {}
+        note = 'รายงานนี้ถูกแก้จากอีกหน้าต่างไปแล้ว จึงเก็บข้อมูลหน้านี้เป็นสำเนาใหม่';
+        updateFileTitle();
+    }
+    D.updatedAt = Date.now();
+    const doc = D;
+    const ok = mutate((s) => { s[doc.id] = doc; });
+    D = doc; docs[doc.id] = doc;
+    if (ok) { dirty = false; loadedAt = doc.updatedAt; setMsg('บันทึกอัตโนมัติแล้ว ' + new Date().toLocaleTimeString('en-GB')); }
+    else setMsg('บันทึกลงเครื่องไม่ได้!', true);
+    if (note) toast(note);
+    else if (ok && lastSize > 3500000 && !sizeWarned) { sizeWarned = true; toast('ที่เก็บข้อมูลในเบราว์เซอร์ใกล้เต็ม กรุณาสำรองข้อมูลแล้วลบรายงานเก่าที่ไม่ใช้'); }
+    $('storage-banner').hidden = ok;
+    renderList();
+    if (ok && navigator.storage && navigator.storage.persist) { navigator.storage.persist().catch(() => {}); }
+}
+
+/* ============ จัดการรายงาน ============ */
+function populate(d) {
+    loading = true;
+    D = d;
+    $('company-name-input').value = d.company || '';
+    $('address').innerText = d.address || '';
+    $('current-date').value = d.date || '';
+    $('week-input').value = d.week || '';
+    document.querySelectorAll('.period [data-p]').forEach((b) => { b.value = (d.period && d.period[+b.dataset.p]) || ''; });
+    FILTER = 'all';
+    render();
+    fitCompanyName(); updateFileTitle();
+    loading = false; dirty = false; loadedAt = d.updatedAt || 0;
+    try { localStorage.setItem(K.cur, d.id); } catch (e) {}
+    renderList();
+}
+function dropIfBlankCurrent(exceptId) {
+    if (D && D.id !== exceptId && isBlank(docs[D.id]) && Object.keys(docs).length > 1) { const id = D.id; mutate((s) => { delete s[id]; }); }
+}
+function openDoc(id) { saveNow(); if (!docs[id]) return; dropIfBlankCurrent(id); populate(docs[id]); toggleSidebar(false); window.scrollTo(0, 0); }
+function newDoc() {
+    saveNow();
+    if (isBlank(docs[D.id])) { toggleSidebar(false); $('week-input').focus(); return; }
+    const d = blankDoc(); mutate((s) => { s[d.id] = d; }); populate(d); toggleSidebar(false); $('week-input').focus();
+}
+function duplicateDoc(id) {
+    saveNow();
+    const src = docs[id]; if (!src) return;
+    const copy = JSON.parse(JSON.stringify(src));
+    copy.id = newId(); copy.createdAt = copy.updatedAt = Date.now();
+    copy.week = (copy.week ? copy.week + ' ' : '') + '(copy)';
+    copy.date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    mutate((s) => { s[copy.id] = copy; }); populate(copy);
+    toast('คัดลอกเป็นรายงานใหม่แล้ว (รวมประวัติการจอง)');
+}
+function sortedDocs() { return Object.values(docs).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)); }
+function deleteDoc(id) {
+    saveNow();
+    const d = docs[id]; if (!d) return;
+    if (!confirm('ลบรายงาน ' + (d.week || '(ไม่มีชื่อ Week)') + ' ?')) return;
+    const backup = JSON.parse(JSON.stringify(d));
+    mutate((s) => { delete s[id]; });
+    if (D && id === D.id) {
+        const rest = sortedDocs();
+        if (rest.length) populate(rest[0]); else { const nd = blankDoc(); mutate((s) => { s[nd.id] = nd; }); populate(nd); }
+    } else renderList();
+    toast('ลบแล้ว', 'ย้อนกลับ', () => { mutate((s) => { s[backup.id] = backup; }); renderList(); toast('กู้คืนแล้ว'); });
+}
+
+/* ============ แถบรายการด้านซ้าย ============ */
+function periodText(d) {
+    const p = d.period || [];
+    return (p[0] || p[1] || p[2] || p[3]) ? (p[0] || '--') + '/' + (p[1] || '--') + ' - ' + (p[2] || '--') + '/' + (p[3] || '--') : '';
+}
+function renderList() {
+    const box = $('doc-list');
+    const q = ($('search').value || '').trim().toLowerCase();
+    box.textContent = '';
+    const hay = (d) => ((d.week || '') + ' ' + d.entries.map((e) => (e.name || '') + ' ' + e.cities.map((c) => (c.c || '') + ' ' + c.hotels.map((h) => h.h || '').join(' ')).join(' ')).join(' ')).toLowerCase();
+    const list = sortedDocs().filter((d) => !q || hay(d).includes(q));
+    if (!list.length) box.appendChild(el('div', 'list-empty', q ? 'ไม่พบที่ค้นหา' : 'ยังไม่มีรายงาน'));
+    list.forEach((d) => {
+        const it = el('div', 'doc-item' + (D && d.id === D.id ? ' active' : ''));
+        it.addEventListener('click', () => { if (!D || d.id !== D.id) openDoc(d.id); else toggleSidebar(false); });
+        const s = stats(d);
+        const top = el('div', 'di-top');
+        top.append(el('span', 'di-ref', (d.week || '').trim() || '(ยังไม่ใส่ Week)'), el('span', 'di-total', s.total ? 'CFM ' + s.cfm + '/' + s.total : ''));
+        const pt = periodText(d);
+        const nm = el('div', 'di-name', pt || 'แก้ไข ' + shortTime(d.updatedAt));
+        const meta = el('div', 'di-meta');
+        const gc = d.entries.filter((e) => !entryBlank(e)).length;
+        const pend = s.booked + s.fully;
+        meta.appendChild(el('span', null, gc + ' กลุ่ม' + (pend ? ' · รอ/เต็ม ' + pend : '')));
+        const act = el('span', 'di-actions');
+        const dup = el('button', null, 'คัดลอก'); dup.addEventListener('click', (e) => { e.stopPropagation(); duplicateDoc(d.id); });
+        const del = el('button', 'del', 'ลบ'); del.addEventListener('click', (e) => { e.stopPropagation(); deleteDoc(d.id); });
+        act.append(dup, del); meta.appendChild(act);
+        it.append(top, nm, meta); box.appendChild(it);
+    });
+    renderBackupNote();
+}
+function toggleSidebar(open) { $('sidebar').classList.toggle('open', open); $('backdrop').classList.toggle('open', open); }
+
+/* ============ สำรอง / นำเข้า ============ */
+function renderBackupNote() {
+    const e = $('backup-note'); let last = 0;
+    try { last = parseInt(localStorage.getItem(K.backup) || '0', 10); } catch (x) {}
+    const n = Object.keys(docs).length;
+    if (!last) { e.textContent = 'ยังไม่เคยสำรองข้อมูล (' + n + ' รายงานในเครื่องนี้)'; e.className = 'sb-note warn'; }
+    else { const days = Math.floor((Date.now() - last) / 86400000); e.textContent = 'สำรองล่าสุด ' + shortTime(last) + ' · ' + n + ' รายงานในเครื่องนี้'; e.className = 'sb-note' + (days >= 7 ? ' warn' : ''); }
+}
+function download(name, text) {
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    const a = document.createElement('a'); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+const stamp = () => new Date().toISOString().slice(0, 10);
+const safeName = (s) => String(s || '').replace(/[\\/:*?"<>|]/g, '').trim();
+function exportAll() {
+    saveNow();
+    const all = sortedDocs();
+    if (!all.length) { toast('ยังไม่มีรายงานให้สำรอง'); return; }
+    download('hotel-status-backup-' + stamp() + '.json', JSON.stringify({ app: 'hotel-status-report', version: 1, exportedAt: new Date().toISOString(), docs: all, cities: CITIES }, null, 1));
+    try { localStorage.setItem(K.backup, String(Date.now())); } catch (e) {}
+    renderBackupNote(); toast('สำรอง ' + all.length + ' รายงานแล้ว');
+}
+function exportCurrent() {
+    saveNow();
+    if (!D) return;
+    download('HotelStatus_' + (safeName(D.week) || 'report') + '.json', JSON.stringify({ app: 'hotel-status-report', version: 1, exportedAt: new Date().toISOString(), docs: [D] }, null, 1));
+}
+function importFile(input) {
+    const f = input.files && input.files[0]; input.value = '';
+    if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+        let data;
+        try { data = JSON.parse(rd.result); } catch (e) { toast('ไฟล์นี้ไม่ใช่ไฟล์สำรองที่ถูกต้อง'); return; }
+        if (data && (data.app === 'tour-cost-summary' || data.app === 'tour-cost-walkin')) { toast('นี่คือไฟล์สำรองของ Cost Summary / Walk-in ใช้นำเข้าที่นี่ไม่ได้'); return; }
+        const list = (Array.isArray(data) ? data : (data && data.docs)) || [];
+        const incoming = (Array.isArray(list) ? list : []).map(normalizeDoc).filter(isTrue);
+        if (!incoming.length) { toast('ไม่พบรายงานในไฟล์นี้'); return; }
+        saveNow();
+        if (data && Array.isArray(data.cities)) { data.cities.forEach((c) => addName('city', c)); }
+        incoming.forEach((d) => d.entries.forEach((e) => e.cities.forEach((c) => { if (c.c.trim()) addName('city', c.c); c.hotels.forEach((h) => { if (h.h.trim()) addName('hotel', h.h); }); })));
+        let added = 0, updated = 0, skipped = 0;
+        const ok = mutate((s) => {
+            incoming.forEach((d) => {
+                const ex = s[d.id];
+                if (!ex) { s[d.id] = d; added++; } else if ((d.updatedAt || 0) > (ex.updatedAt || 0)) { s[d.id] = d; updated++; } else skipped++;
+            });
+        });
+        if (!ok) { toast('บันทึกลงเครื่องไม่ได้'); return; }
+        if (D && docs[D.id]) populate(docs[D.id]); else renderList();
+        toast('นำเข้า: เพิ่มใหม่ ' + added + ' · อัปเดต ' + updated + (skipped ? ' · ข้าม ' + skipped + ' (ในเครื่องใหม่กว่า)' : ''));
+    };
+    rd.onerror = () => toast('อ่านไฟล์ไม่ได้');
+    rd.readAsText(f);
+}
+
+/* ============ ข้อความแจ้งเตือน ============ */
+let toastTimer = null;
+function toast(msg, actLabel, actFn) {
+    $('toast-msg').textContent = msg;
+    const b = $('toast-act');
+    if (actLabel) { b.hidden = false; b.textContent = actLabel; b.onclick = () => { $('toast').hidden = true; actFn(); }; }
+    else { b.hidden = true; b.onclick = null; }
+    $('toast').hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { $('toast').hidden = true; }, actLabel ? 8000 : 3500);
+}
+
+/* ============ ชื่อบริษัท / ชื่อไฟล์ PDF ============ */
+const companyInput = $('company-name-input');
+function fitCompanyName() {
+    companyInput.style.fontSize = '';
+    let size = parseFloat(getComputedStyle(companyInput).fontSize) || 24;
+    let guard = 60;
+    while (companyInput.scrollWidth > companyInput.clientWidth && size > 10 && guard-- > 0) { size -= 0.5; companyInput.style.fontSize = size + 'px'; }
+}
+function updateFileTitle() {
+    const clean = (s) => s.replace(/[\\/:*?"<>|]/g, '').trim();
+    const week = clean($('week-input').value).replace(/\s+/g, '_');
+    const tm = parseInt((D && D.period && D.period[1]) || '', 10);
+    const mm = (tm >= 1 && tm <= 12) ? String(tm).padStart(2, '0') : '';
+    document.title = ['HotelStatus', week, mm].filter(Boolean).join('_');
+}
+function printDoc() { saveNow(); updateFileTitle(); window.print(); }
+
+/* ============ รายชื่อโรงแรม (ใช้ร่วมกับ Cost Summary: คีย์ tcs:v1:master หมวด sec-acc) / เมือง ============ */
+function normMaster(o) {
+    const out = {};
+    MKEYS.forEach((id) => {
+        const arr = Array.isArray(o && o[id]) ? o[id] : [];
+        const seen = new Set(); out[id] = [];
+        arr.forEach((it) => {
+            const n = String(it && it.n != null ? it.n : '').trim(), k = n.toLowerCase();
+            if (!n || seen.has(k)) return;
+            seen.add(k);
+            out[id].push({ n, t: (Array.isArray(it.t) ? it.t : []).map((x) => String(x).trim()).filter(Boolean).slice(0, 30) });
+        });
+    });
+    return out;
+}
+function readMaster() {
+    let raw = null;
+    try { raw = localStorage.getItem(K.master); } catch (e) { return normMaster({}); }
+    if (!raw) return normMaster({});
+    try { return normMaster(JSON.parse(raw)); }
+    catch (e) { try { localStorage.setItem(K.master + '.corrupt', raw); } catch (_) {} return normMaster({}); }
+}
+function writeMaster(m) { try { localStorage.setItem(K.master, JSON.stringify(m)); return true; } catch (e) { return false; } }
+function readCities() {
+    let raw = null;
+    try { raw = localStorage.getItem(K.cities); } catch (e) { return DEFAULT_CITIES.slice(); }
+    if (raw == null) return DEFAULT_CITIES.slice();
+    try { const a = JSON.parse(raw); return Array.isArray(a) ? a.map((x) => str(x).trim()).filter(Boolean) : DEFAULT_CITIES.slice(); } catch (e) { return DEFAULT_CITIES.slice(); }
+}
+function writeCities() { try { localStorage.setItem(K.cities, JSON.stringify(CITIES)); return true; } catch (e) { return false; } }
+function listOf(kind) { return kind === 'hotel' ? MASTER['sec-acc'].map((i) => i.n) : CITIES; }
+function addName(kind, name) {
+    name = str(name).trim();
+    if (!name) return false;
+    const low = name.toLowerCase();
+    if (kind === 'hotel') {
+        MASTER = readMaster();
+        if (MASTER['sec-acc'].some((i) => i.n.toLowerCase() === low)) return false;
+        MASTER['sec-acc'].push({ n: name, t: [] }); writeMaster(MASTER); return true;
+    }
+    if (CITIES.some((c) => c.toLowerCase() === low)) return false;
+    CITIES.push(name); writeCities(); return true;
+}
+function renameName(kind, old, nn) {
+    if (kind === 'hotel') { MASTER = readMaster(); const x = MASTER['sec-acc'].find((i) => i.n === old); if (x) x.n = nn; writeMaster(MASTER); }
+    else { CITIES = CITIES.map((c) => (c === old ? nn : c)); writeCities(); }
+}
+function removeName(kind, n) {
+    if (kind === 'hotel') { MASTER = readMaster(); const x = MASTER['sec-acc'].find((i) => i.n === n); MASTER['sec-acc'] = MASTER['sec-acc'].filter((i) => i.n !== n); writeMaster(MASTER); return x || { n, t: [] }; }
+    CITIES = CITIES.filter((c) => c !== n); writeCities(); return { n, t: [] };
+}
+function restoreName(kind, it) {
+    if (kind === 'hotel') { MASTER = readMaster(); if (!MASTER['sec-acc'].some((i) => i.n.toLowerCase() === it.n.toLowerCase())) { MASTER['sec-acc'].push(it); writeMaster(MASTER); } }
+    else addName('city', it.n);
+}
+let mKind = 'hotel';
+const MLABEL = { hotel: 'โรงแรม', city: 'เมือง' };
+const sortTh = (arr) => arr.slice().sort((a, b) => a.localeCompare(b, 'th'));
+function openManage() { MASTER = readMaster(); CITIES = readCities(); renderManage(); $('manage-modal').hidden = false; toggleSidebar(false); setTimeout(() => $('manage-new').focus(), 50); }
+function closeManage() { $('manage-modal').hidden = true; }
+function renderManage() {
+    const tabs = $('manage-tabs'); tabs.textContent = '';
+    ['hotel', 'city'].forEach((k) => {
+        const b = el('button', 'tab' + (k === mKind ? ' active' : ''), MLABEL[k] + ' (' + listOf(k).length + ')'); b.type = 'button';
+        b.onclick = () => { mKind = k; renderManage(); $('manage-new').focus(); };
+        tabs.appendChild(b);
+    });
+    const box = $('manage-list'); box.textContent = '';
+    const items = sortTh(listOf(mKind));
+    if (!items.length) box.appendChild(el('div', 'list-empty', 'ยังไม่มีรายชื่อในหมวดนี้'));
+    items.forEach((name) => {
+        const row = el('div', 'm-row');
+        const i = document.createElement('input'); i.type = 'text'; i.value = name; i.autocomplete = 'off';
+        const kind = mKind;
+        i.addEventListener('change', () => {
+            const nn = i.value.trim();
+            if (!nn) { i.value = name; return; }
+            if (nn.toLowerCase() !== name.toLowerCase() && listOf(kind).some((x) => x.toLowerCase() === nn.toLowerCase())) { toast('มีชื่อนี้อยู่แล้ว'); i.value = name; return; }
+            renameName(kind, name, nn); renderManage();
+        });
+        const del = el('button', 'm-del', '×'); del.title = 'ลบออกจากรายการ'; del.type = 'button';
+        del.addEventListener('click', () => {
+            const backup = removeName(kind, name); renderManage();
+            toast('ลบ “' + name + '” แล้ว', 'ย้อนกลับ', () => { restoreName(kind, backup); renderManage(); });
+        });
+        row.append(i, del); box.appendChild(row);
+    });
+}
+function manageAddOne() {
+    const i = $('manage-new'), name = i.value.trim();
+    if (!name) return;
+    const added = addName(mKind, name);
+    i.value = ''; renderManage();
+    toast(added ? 'เพิ่ม “' + name + '” แล้ว' : 'มีชื่อนี้อยู่แล้ว');
+    i.focus();
+}
+function manageAddBulk() {
+    const lines = $('manage-bulk').value.split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+    let n = 0; lines.forEach((l) => { if (addName(mKind, l)) n++; });
+    $('manage-bulk').value = ''; renderManage();
+    toast('เพิ่ม ' + n + ' รายการ' + (lines.length - n ? ' (ซ้ำ ' + (lines.length - n) + ')' : ''));
+}
+$('btn-manage').addEventListener('click', openManage);
+$('manage-close').addEventListener('click', closeManage);
+$('manage-modal').addEventListener('click', (e) => { if (e.target === $('manage-modal')) closeManage(); });
+$('manage-add').addEventListener('click', manageAddOne);
+$('manage-new').addEventListener('keydown', (e) => { if (e.key === 'Enter') manageAddOne(); });
+$('manage-bulk-add').addEventListener('click', manageAddBulk);
+
+/* ============ รายการแนะนำขณะพิมพ์ (autocomplete) ============ */
+const ac = { el: null, input: null, items: [], idx: -1 };
+function acEnsure() {
+    if (ac.el) return;
+    ac.el = el('div', 'ac-pop no-print'); ac.el.hidden = true;
+    ac.el.addEventListener('mousedown', (e) => { e.preventDefault(); const li = e.target.closest('[data-i]'); if (li) acPick(+li.dataset.i); });
+    document.body.appendChild(ac.el);
+}
+function acOptions(input) {
+    const kind = input.dataset.ac, all = listOf(kind), raw = input.value.trim(), q = raw.toLowerCase();
+    const exact = all.some((n) => n.toLowerCase() === q);
+    const list = (exact || !q) ? all : all.filter((n) => n.toLowerCase().includes(q));
+    const items = sortTh(list).slice(0, 60).map((n) => ({ label: n, val: n }));
+    if (q && !exact) items.push({ label: '+ เพิ่ม “' + raw + '” เข้ารายการ', val: raw, add: true });
+    if (!items.length) items.push({ label: 'ยังไม่มีรายชื่อ พิมพ์ชื่อแล้วเลือก “+ เพิ่ม”', hint: true });
+    return items;
+}
+function acShow(input) {
+    acEnsure();
+    if (!MASTER) MASTER = readMaster();
+    const items = acOptions(input);
+    ac.input = input; ac.items = items; ac.idx = -1; ac.el.textContent = '';
+    items.forEach((it, i) => { const d = el('div', 'ac-item' + (it.add ? ' add' : '') + (it.hint ? ' hint' : ''), it.label); d.dataset.i = i; ac.el.appendChild(d); });
+    const r = input.getBoundingClientRect(), w = Math.max(r.width, 240);
+    ac.el.style.minWidth = w + 'px';
+    ac.el.style.left = Math.max(8, Math.min(r.left + window.scrollX, window.scrollX + document.documentElement.clientWidth - w - 12)) + 'px';
+    ac.el.style.top = (r.bottom + window.scrollY + 2) + 'px';
+    ac.el.hidden = false;
+}
+function acHide() { if (ac.el) ac.el.hidden = true; ac.input = null; }
+function acMark() { [...ac.el.children].forEach((c, i) => { c.classList.toggle('sel', i === ac.idx); if (i === ac.idx && c.scrollIntoView) c.scrollIntoView({ block: 'nearest' }); }); }
+function acPick(i) {
+    const it = ac.items[i], input = ac.input;
+    if (!it || it.hint || !input) return;
+    const kind = input.dataset.ac;
+    input.value = it.val;
+    if (it.add) { addName(kind, it.val); toast('เพิ่ม “' + it.val + '” เข้ารายการแล้ว'); }
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    acHide();
+    const scope = kind === 'hotel' ? input.closest('.h-row') : input.closest('.city');
+    const next = kind === 'hotel' ? scope.querySelector('.h-note') : scope.querySelector('.h-name');
+    if (next) next.focus();
+}
+const isAc = (t) => t && t.matches && t.matches('input[data-ac]');
+document.addEventListener('focusin', (e) => { if (isAc(e.target) && $('sheet').contains(e.target)) acShow(e.target); else acHide(); });
+document.addEventListener('focusout', (e) => { if (isAc(e.target)) acHide(); });
+document.addEventListener('input', (e) => { if (isAc(e.target)) acShow(e.target); });
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { if (!$('manage-modal').hidden) { closeManage(); return; } if (!$('hist-modal').hidden) { $('hist-modal').hidden = true; HM = null; return; } }
+    const t = e.target;
+    if (!isAc(t)) return;
+    if (e.key === 'ArrowDown' && (!ac.el || ac.el.hidden)) { acShow(t); e.preventDefault(); return; }
+    if (!ac.el || ac.el.hidden || ac.input !== t) return;
+    if (e.key === 'ArrowDown') { ac.idx = Math.min(ac.idx + 1, ac.items.length - 1); acMark(); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { ac.idx = Math.max(ac.idx - 1, 0); acMark(); e.preventDefault(); }
+    else if (e.key === 'Enter' && ac.idx >= 0) { e.preventDefault(); acPick(ac.idx); }
+    else if (e.key === 'Escape') acHide();
+});
+window.addEventListener('resize', acHide);
+
+/* ============ ธีม + ผูกเหตุการณ์ ============ */
+function currentTheme() { return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'; }
+function applyTheme(t) {
+    if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); else document.documentElement.removeAttribute('data-theme');
+    const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = t === 'dark' ? '#171b21' : '#C2185B';
+    $('theme-btn').textContent = t === 'dark' ? '☀ Light' : '🌙 Dark';
+}
+function toggleTheme() { const t = currentTheme() === 'dark' ? 'light' : 'dark'; applyTheme(t); try { localStorage.setItem(K.theme, t); } catch (e) {} }
+$('theme-btn').addEventListener('click', toggleTheme);
+$('btn-new').addEventListener('click', newDoc);
+$('search').addEventListener('input', renderList);
+$('btn-export-all').addEventListener('click', exportAll);
+$('btn-export-cur').addEventListener('click', exportCurrent);
+$('btn-import').addEventListener('click', () => $('import-file').click());
+$('import-file').addEventListener('change', (e) => importFile(e.target));
+$('btn-print').addEventListener('click', printDoc);
+$('btn-menu').addEventListener('click', () => toggleSidebar(true));
+$('backdrop').addEventListener('click', () => toggleSidebar(false));
+window.addEventListener('error', (e) => { toast('เกิดข้อผิดพลาด: ' + (e.message || 'ไม่ทราบสาเหตุ') + ' (ข้อมูลที่บันทึกไว้แล้วไม่เสียหาย ลองรีเฟรชหน้า)'); });
+window.addEventListener('unhandledrejection', () => { toast('เกิดข้อผิดพลาดบางอย่าง ข้อมูลที่บันทึกไว้แล้วไม่เสียหาย'); });
+window.addEventListener('beforeprint', () => { updateFileTitle(); fitCompanyName(); });
+window.addEventListener('resize', fitCompanyName);
+window.addEventListener('load', fitCompanyName);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitCompanyName);
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
+window.addEventListener('pagehide', saveNow);
+window.addEventListener('storage', (e) => {
+    if (e.key === K.docs) {
+        docs = readStore();
+        const cur = D && docs[D.id];
+        if (cur && !dirty && (cur.updatedAt || 0) > loadedAt) { populate(cur); toast('อัปเดตรายงานนี้ตามที่แก้จากอีกหน้าต่างแล้ว'); } else renderList();
+    }
+    if (e.key === K.master) MASTER = readMaster();
+    if (e.key === K.cities) CITIES = readCities();
+});
+document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveNow(); toast('บันทึกแล้ว'); } });
+if (window.matchMedia) {
+    const mq = matchMedia('(prefers-color-scheme: dark)');
+    if (mq.addEventListener) mq.addEventListener('change', (e) => { let s = null; try { s = localStorage.getItem(K.theme); } catch (_) {} if (!s) applyTheme(e.matches ? 'dark' : 'light'); });
+}
+
+/* ============ เริ่มต้น ============ */
+(function init() {
+    applyTheme(currentTheme());
+    docs = readStore();
+    Object.keys(docs).forEach((id) => { const n = normalizeDoc(docs[id]); if (n) { n.id = id; docs[id] = n; } else delete docs[id]; });
+    MASTER = readMaster(); CITIES = readCities();
+    $('app-version').textContent = 'Hotel Status Report v' + APP_VERSION;
+    $('storage-banner').hidden = storageOk;
+    let id = null;
+    try { id = localStorage.getItem(K.cur); } catch (e) {}
+    if (id && docs[id]) populate(docs[id]);
+    else if (Object.keys(docs).length) populate(sortedDocs()[0]);
+    else { const d = blankDoc(); mutate((s) => { s[d.id] = d; }); populate(d); }
+    setMsg(storageOk ? 'พร้อมใช้งาน · บันทึกอัตโนมัติ' : 'บันทึกลงเครื่องไม่ได้!', !storageOk);
+})();
+</script>
+</body>
+</html>
