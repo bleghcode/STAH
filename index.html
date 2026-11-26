@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +7,7 @@
 <script>(function () { try { var t = localStorage.getItem('tcs:v1:theme'); if (!t && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark'; if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); } catch (e) {} })();</script>
 <title>Hotel Booking Status Report</title>
 <style>
-    /* Hotel Booking Status Report: โครงสร้างจาก Walk-in Cost Report, หัวสีชมพู, ฟอนต์ Segoe UI */
+    /* Hotel Booking Status Report: pink header, Segoe UI font */
     :root {
         --brand: #C2185B; --brand-d: #A01249; --brand-t: #C2185B; --tint: #FDEBF3; --dark: #4A1230;
         --bg: #F6F2F4; --card: #fff; --text: #1f2937; --muted: #6b7280; --faint: #9ca3af;
@@ -77,6 +77,8 @@
     .filters { position: sticky; top: 50px; z-index: 19; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding: 0 0 8px; background: var(--bg); max-width: 210mm; margin: 0 auto; font-size: 12px; color: var(--muted); }
     .chip { border: 1px solid var(--fieldline); background: var(--field); color: var(--text); border-radius: 999px; padding: 3px 11px; font-size: 12px; }
     .chip.active { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
+    .sort-chip { margin-left: auto; border-color: var(--brand-t); color: var(--brand-t); font-weight: 600; }
+    .sort-chip:hover { background: var(--tint); }
     .banner { max-width: 210mm; margin: 0 auto 10px; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 8px; padding: 10px 14px; font-size: 13px; }
     .banner[hidden] { display: none; }
     .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 90; background: #1f2937; color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 13px; box-shadow: 0 6px 20px rgba(0,0,0,.25); display: flex; gap: 14px; align-items: center; max-width: 92vw; }
@@ -84,7 +86,7 @@
     .toast button { background: none; border: none; color: #fbbf24; font-weight: 700; font-size: 13px; padding: 0; }
     .backdrop { display: none; }
 
-    /* ---------- แผ่นรายงาน ---------- */
+    /* ---------- report sheet ---------- */
     .sheet { max-width: 210mm; margin: 0 auto; background: var(--card); padding: 2rem; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,.1), 0 4px 10px -6px rgba(0,0,0,.1); }
     .doc-head { display: flex; justify-content: space-between; align-items: flex-start; padding: 1.5rem 0 1rem; }
     .doc-head .left { flex: 1; min-width: 0; padding-right: 1rem; }
@@ -148,7 +150,7 @@
     .add-entry { display: block; width: 100%; margin: 0 0 1rem; padding: .6rem; border: 2px dashed var(--brand-t); border-radius: 8px; background: var(--act); color: var(--brand-t); font-weight: 700; font-size: .9rem; }
     .add-entry:hover { background: var(--tint); }
 
-    /* ป้ายสถานะ */
+    /* status badges */
     .st { border: 1px solid transparent; border-radius: 6px; padding: .25rem .4rem; font-size: .82rem; font-weight: 700; width: 100%; appearance: auto; }
     .st-print { display: none; }
     .b-none { background: var(--field); color: var(--muted); border-color: var(--fieldline); font-weight: 400; }
@@ -218,7 +220,7 @@
         .c-name { width: 100%; }
     }
 
-    /* ---------- พิมพ์ / Save as PDF ---------- */
+    /* ---------- print / Save as PDF ---------- */
     @media print {
         .no-print { display: none !important; }
         body { background: #fff; }
@@ -249,14 +251,14 @@
     <aside class="sidebar no-print" id="sidebar">
         <div class="sb-head">
             <div class="sb-title">Hotel Status Report</div>
-            <button class="btn btn-primary btn-block" id="btn-new">+ รายงานใหม่</button>
-            <input type="search" id="search" class="search" placeholder="ค้นหา Week / ลูกค้า / โรงแรม">
+            <button class="btn btn-primary btn-block" id="btn-new">+ New report</button>
+            <input type="search" id="search" class="search" placeholder="Search week / customer / hotel">
         </div>
         <div class="doc-list" id="doc-list"></div>
         <div class="sb-foot">
-            <button class="btn btn-ghost btn-block" id="btn-manage">📋 จัดการรายชื่อ (โรงแรม / เมือง)</button>
-            <button class="btn btn-ghost btn-block" id="btn-export-all">สำรองข้อมูลทั้งหมด (.json)</button>
-            <button class="btn btn-ghost btn-block" id="btn-import">นำเข้าจากไฟล์สำรอง</button>
+            <button class="btn btn-ghost btn-block" id="btn-manage">📋 Manage lists (hotels / cities)</button>
+            <button class="btn btn-ghost btn-block" id="btn-export-all">Back up all data (.json)</button>
+            <button class="btn btn-ghost btn-block" id="btn-import">Import from backup file</button>
             <input type="file" id="import-file" accept=".json,application/json" hidden>
             <div class="sb-note" id="backup-note"></div>
             <div class="sb-note" id="app-version"></div>
@@ -266,16 +268,16 @@
 
     <main class="main">
         <div class="topbar no-print">
-            <button class="btn btn-ghost menu-btn" id="btn-menu">☰ รายการ</button>
-            <span class="status ok" id="status">พร้อมใช้งาน</span>
+            <button class="btn btn-ghost menu-btn" id="btn-menu">☰ Reports</button>
+            <span class="status ok" id="status">Ready</span>
             <span class="spacer"></span>
             <button class="btn btn-ghost" id="theme-btn">🌙 Dark</button>
-            <button class="btn btn-ghost" id="btn-export-cur">Export รายงานนี้</button>
+            <button class="btn btn-ghost" id="btn-export-cur">Export this report</button>
             <button class="btn btn-primary" id="btn-print">🖨 Save as PDF</button>
         </div>
         <div class="filters no-print" id="filters"></div>
         <div class="banner no-print" id="storage-banner" hidden>
-            ⚠ เบราว์เซอร์นี้ไม่ยอมให้เก็บข้อมูลในเครื่อง ข้อมูลจะหายเมื่อปิดหน้า กรุณากดสำรองข้อมูลเป็นไฟล์ก่อนปิด
+            ⚠ This browser is blocking local storage. Your data will be lost when you close the page — please back it up to a file first.
         </div>
 
         <div class="sheet" id="sheet">
@@ -320,42 +322,42 @@
         </div>
 
         <div class="help no-print">
-            💡 <b>วิธีใช้:</b> 1 รายงาน = 1 สัปดาห์ · <b>+ ADD NEW GROUP</b> เพิ่มกลุ่มลูกค้า · ในกลุ่มกด <b>+ เพิ่มเมือง</b> (Bangkok / Pattaya / Phuket ได้หลายเมือง) แล้วกด <b>+ Hotel</b> เพิ่มโรงแรม
-            <br>เลือกสถานะที่ช่อง Status (Booked = จองแล้วรอตอบ · CFM = ยืนยันแล้ว · Fully = เต็ม · Cancelled = ยกเลิก) ระบบบันทึกประวัติพร้อมวัน-เวลาให้อัตโนมัติ · กด <b>🕘</b> เพื่อดู/เพิ่มหมายเหตุประวัติการจอง (ประวัติไม่ถูกพิมพ์ลง PDF)
-            <br>ปุ่มกรองด้านบน (Booked / CFM / Fully …) ใช้ดูหรือพิมพ์เฉพาะรายการสถานะนั้น · ลบอะไรไปกด “ย้อนกลับ” ได้ · ⚠ ข้อมูลอยู่ในเบราว์เซอร์นี้เท่านั้น ควรกด “สำรองข้อมูลทั้งหมด” เป็นระยะ
+            💡 <b>How to use:</b> 1 report = 1 week · <b>+ ADD NEW GROUP</b> adds a customer group · inside a group, click <b>+ Add city</b> (a group can have several cities, e.g. Bangkok / Pattaya / Phuket), then <b>+ Hotel</b> to add hotels
+            <br>Pick a Status for each hotel (Booked = requested, waiting for reply · CFM = confirmed · Fully = hotel is full · Cancelled). The date and time of every change is logged automatically · click <b>🕘</b> to view or add booking-history notes (history is not printed to PDF)
+            <br><b>↕ Sort by date</b> orders the customer groups by their earliest start date — handy when you enter bookings out of order. Cities and hotels stay inside their group, unchanged; numbers are renumbered 1, 2, 3… unless you typed your own · The filter buttons at the top (Booked / CFM / Fully …) show or print only hotels with that status · anything you delete can be restored with “Undo” · ⚠ data lives in this browser only — use “Back up all data” regularly
         </div>
     </main>
 </div>
 
-<!-- จัดการรายชื่อ -->
+<!-- Manage lists -->
 <div class="modal-back no-print" id="manage-modal" hidden>
     <div class="modal">
-        <div class="modal-head"><b>จัดการรายชื่อ<small>รายชื่อโรงแรมใช้ร่วมกับ Cost Summary (ถ้าเปิดจากที่เดียวกัน)</small></b><button class="btn btn-ghost" id="manage-close">ปิด</button></div>
+        <div class="modal-head"><b>Manage lists<small>The hotel list is shared with Cost Summary (when opened from the same address)</small></b><button class="btn btn-ghost" id="manage-close">Close</button></div>
         <div class="tabs" id="manage-tabs"></div>
         <div class="m-add">
-            <input type="text" id="manage-new" placeholder="พิมพ์ชื่อ แล้วกด Enter เพื่อเพิ่ม" autocomplete="off">
-            <button class="btn btn-primary" id="manage-add">เพิ่ม</button>
+            <input type="text" id="manage-new" placeholder="Type a name, press Enter to add" autocomplete="off">
+            <button class="btn btn-primary" id="manage-add">Add</button>
         </div>
         <details class="m-bulk">
-            <summary>เพิ่มทีละหลายรายการ (วางจาก Excel ได้ บรรทัดละ 1 ชื่อ)</summary>
+            <summary>Add many at once (paste from Excel, one name per line)</summary>
             <textarea id="manage-bulk" rows="5"></textarea>
-            <button class="btn btn-ghost" id="manage-bulk-add">เพิ่มทั้งหมด</button>
+            <button class="btn btn-ghost" id="manage-bulk-add">Add all</button>
         </details>
         <div class="m-list" id="manage-list"></div>
-        <div class="sb-note">การแก้ชื่อหรือลบในหน้านี้ไม่เปลี่ยนรายงานที่ทำไปแล้ว</div>
+        <div class="sb-note">Renaming or deleting here does not change reports you have already made.</div>
     </div>
 </div>
 
-<!-- ประวัติการจอง -->
+<!-- Booking history -->
 <div class="modal-back no-print" id="hist-modal" hidden>
     <div class="modal">
-        <div class="modal-head"><b id="hist-title"></b><button class="btn btn-ghost" id="hist-close">ปิด</button></div>
+        <div class="modal-head"><b id="hist-title"></b><button class="btn btn-ghost" id="hist-close">Close</button></div>
         <div class="m-list" id="hist-list"></div>
         <div class="m-add">
-            <input type="date" id="hist-date" title="วันที่ของรายการ (ย้อนหลังได้)">
+            <input type="date" id="hist-date" title="Date of this entry (can be in the past)">
             <select id="hist-status"></select>
-            <input type="text" id="hist-note" placeholder="หมายเหตุ เช่น ติดต่อ Reservation แล้ว / รอ CFM วันจันทร์" autocomplete="off">
-            <button class="btn btn-primary" id="hist-add">บันทึก</button>
+            <input type="text" id="hist-note" placeholder="Note, e.g. contacted Reservation / waiting for CFM on Monday" autocomplete="off">
+            <button class="btn btn-primary" id="hist-add">Save</button>
         </div>
     </div>
 </div>
@@ -365,7 +367,7 @@
 <script>
 'use strict';
 
-/* ============ ค่าคงที่ ============ */
+/* ============ constants ============ */
 const K = { docs: 'hsr:v1:docs', cur: 'hsr:v1:current', backup: 'hsr:v1:lastBackup', cities: 'hsr:v1:cities', master: 'tcs:v1:master', theme: 'tcs:v1:theme' };
 const APP_VERSION = '1.0.0';
 const ST = [
@@ -380,11 +382,11 @@ const DEFAULT_CITIES = ['Bangkok', 'Pattaya', 'Phuket', 'Chiang Mai', 'Chiang Ra
 const MAX_E = 300, MAX_C = 30, MAX_H = 60, MAX_HIST = 300;
 const MKEYS = ['sec-acc', 'sec-tour', 'sec-trans', 'sec-other'];
 
-let D = null;                 // รายงานที่เปิดอยู่
+let D = null;                 // report currently open
 let docs = {};
 let loading = false, storageOk = true, dirty = false, loadedAt = 0, lastSize = 0, sizeWarned = false;
 let saveTimer = null, FILTER = 'all';
-let HM = null;                // ตำแหน่งที่เปิดประวัติอยู่ {e,c,h}
+let HM = null;                // position whose history is open {e,c,h}
 let MASTER = null, CITIES = [];
 
 const $ = (id) => document.getElementById(id);
@@ -402,13 +404,13 @@ function shortTime(ts) {
 }
 function todayISO() { const t = new Date(); return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); }
 
-/* ============ ที่เก็บข้อมูล ============ */
+/* ============ storage ============ */
 function readStore() {
     let raw = null;
     try { raw = localStorage.getItem(K.docs); } catch (e) { storageOk = false; return {}; }
     if (!raw) return {};
     try { const o = JSON.parse(raw); return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {}; }
-    catch (e) { try { localStorage.setItem(K.docs + '.corrupt', raw); } catch (_) {} toast('ข้อมูลที่เก็บไว้อ่านไม่ได้ เก็บสำเนาไว้แล้ว'); return {}; }
+    catch (e) { try { localStorage.setItem(K.docs + '.corrupt', raw); } catch (_) {} toast('Stored data could not be read; a copy has been kept'); return {}; }
 }
 function writeStore(obj) {
     try { const s = JSON.stringify(obj); localStorage.setItem(K.docs, s); lastSize = s.length; storageOk = true; return true; }
@@ -416,7 +418,7 @@ function writeStore(obj) {
 }
 function mutate(fn) { const s = readStore(); fn(s); const ok = writeStore(s); docs = ok ? s : Object.assign(docs, s); return ok; }
 
-/* ============ โครงสร้างข้อมูล ============ */
+/* ============ data model ============ */
 function newHotel() { return { h: '', n: '', s: '', hist: [] }; }
 function newCity() { return { c: '', from: ['', ''], to: ['', ''], hotels: [newHotel()] }; }
 function newEntry(no) { return { no: str(no), name: '', pax: '', remark: '', cities: [newCity()] }; }
@@ -484,7 +486,7 @@ function normalizeDoc(x) {
     return out;
 }
 
-/* ============ วาดหน้ารายงาน ============ */
+/* ============ rendering ============ */
 function inp(cls, lvl, field, val, ph, max) {
     const i = document.createElement('input');
     i.type = 'text'; i.className = cls; i.dataset.l = lvl; i.dataset.f = field; i.value = val || ''; i.placeholder = ph || '';
@@ -510,7 +512,7 @@ function buildHotel(h, hi) {
     const sp = el('span', 'st-print b-' + (h.s || 'none'), STL[h.s] || '');
     const hb = actBtn('hist-btn', 'hist', '🕘' + (h.hist.length ? ' ' + h.hist.length : ''));
     const last = h.hist.length ? h.hist[h.hist.length - 1] : null;
-    hb.title = last ? 'ประวัติ ' + h.hist.length + ' รายการ · ล่าสุด ' + (last.s === '~' ? 'Note' : (STL[last.s] || 'Cleared')) + ' ' + fmtDT(last.t) : 'ยังไม่มีประวัติ';
+    hb.title = last ? 'History: ' + h.hist.length + ' entries · latest ' + (last.s === '~' ? 'Note' : (STL[last.s] || 'Cleared')) + ' ' + fmtDT(last.t) : 'No history yet';
     r.append(rm, nm, nt, sel, sp, hb);
     return r;
 }
@@ -522,7 +524,7 @@ function buildCity(c, ci) {
     const sep = (t) => el('span', null, t);
     const end = el('span', 'd-end'); end.append(el('span', 'd-sep', '-'), dateBox(2, c.to[0]), sep('/'), dateBox(3, c.to[1]));
     dates.append(el('b', null, 'Date'), dateBox(0, c.from[0]), sep('/'), dateBox(1, c.from[1]), end);
-    bar.append(name, dates, actBtn('btn-add', 'add-hotel', '+ Hotel'), actBtn('c-del', 'del-city', '×', 'ลบเมืองนี้ทั้งรายการ'));
+    bar.append(name, dates, actBtn('btn-add', 'add-hotel', '+ Hotel'), actBtn('c-del', 'del-city', '×', 'Delete this city'));
     const box = el('div', 'hotels');
     c.hotels.forEach((h, hi) => box.appendChild(buildHotel(h, hi)));
     w.append(bar, box);
@@ -531,7 +533,7 @@ function buildCity(c, ci) {
 function buildEntry(e, ei) {
     const s = el('section', 'entry'); s.dataset.e = ei;
     const bar = el('div', 'entry-bar');
-    bar.append(inp('e-no', 'e', 'no', e.no, '#', 6), inp('e-name', 'e', 'name', e.name, 'Customer / Group name'), el('span', 'e-sum'), actBtn('e-del', 'del-entry', '×', 'ลบกลุ่มนี้ทั้งรายการ'));
+    bar.append(inp('e-no', 'e', 'no', e.no, '#', 6), inp('e-name', 'e', 'name', e.name, 'Customer / Group name'), el('span', 'e-sum'), actBtn('e-del', 'del-entry', '×', 'Delete this group'));
     bar.firstChild.setAttribute('aria-label', 'No.');
     const meta = el('div', 'entry-meta');
     const pax = el('span', 'm-item m-pax'); pax.append(el('b', null, 'Pax'), inp('', 'e', 'pax', e.pax, '—', 20));
@@ -539,7 +541,7 @@ function buildEntry(e, ei) {
     meta.append(pax, rem);
     const cities = el('div', 'cities');
     e.cities.forEach((c, ci) => cities.appendChild(buildCity(c, ci)));
-    const add = actBtn('add-city', 'add-city', '+ เพิ่มเมือง (Pattaya / Phuket …)');
+    const add = actBtn('add-city', 'add-city', '+ Add city (Pattaya / Phuket …)');
     s.append(bar, meta, cities, add);
     return s;
 }
@@ -571,14 +573,18 @@ function summary() {
     $('t_grand').textContent = String(s.total);
     $('footer-count').textContent = D.entries.length + ' group' + (D.entries.length === 1 ? '' : 's') + ' · ' + s.total + ' hotel' + (s.total === 1 ? '' : 's');
     $('footer-company').textContent = D.company + ' - Hotel Booking Status Report';
-    // ปุ่มกรอง
+    // filter buttons
     const f = $('filters'); f.textContent = '';
-    f.appendChild(el('span', null, 'กรอง:'));
+    f.appendChild(el('span', null, 'Filter:'));
     [['all', 'All', s.total], ['booked', 'Booked', s.booked], ['cfm', 'CFM', s.cfm], ['fully', 'Fully', s.fully], ['cancel', 'Cancelled', s.cancel], ['none', 'No status', s.none]].forEach(([k, l, n]) => {
         const b = el('button', 'chip' + (FILTER === k ? ' active' : ''), l + ' ' + n); b.type = 'button';
         b.addEventListener('click', () => setFilter(k));
         f.appendChild(b);
     });
+    const sb = el('button', 'chip sort-chip', '↕ Sort by date'); sb.type = 'button';
+    sb.title = 'Sort customer groups by their earliest start date (cities and hotels stay inside their group, in the order you entered them)';
+    sb.addEventListener('click', sortByDate);
+    f.appendChild(sb);
     updateSums();
     applyFilter();
 }
@@ -594,7 +600,7 @@ function applyFilter() {
     n.textContent = f === 'all' ? '' : 'Filtered: ' + (f === 'none' ? 'No status' : STL[f]) + ' only';
 }
 
-/* ============ เก็บค่าจากฟอร์ม ============ */
+/* ============ form input ============ */
 function ctx(t) {
     const en = t.closest('.entry'), ci = t.closest('.city'), hr = t.closest('.h-row');
     const e = en ? D.entries[+en.dataset.e] : null;
@@ -636,7 +642,7 @@ $('sheet').addEventListener('keydown', (e) => {
     }
 });
 $('sheet').addEventListener('focusin', (e) => { if (e.target.classList && e.target.classList.contains('date-box')) e.target.select(); });
-/* เปลี่ยนสถานะ → บันทึกประวัติอัตโนมัติ */
+/* status change -> auto history entry */
 $('sheet').addEventListener('change', (e) => {
     const t = e.target;
     if (!t.classList || !t.classList.contains('st') || !D) return;
@@ -650,11 +656,11 @@ $('sheet').addEventListener('change', (e) => {
     t.className = 'st b-' + (v || 'none');
     const sp = row.querySelector('.st-print'); sp.className = 'st-print b-' + (v || 'none'); sp.textContent = STL[v] || '';
     const hb = row.querySelector('.hist-btn'); hb.textContent = '🕘 ' + x.h.hist.length;
-    hb.title = 'ประวัติ ' + x.h.hist.length + ' รายการ · ล่าสุด ' + (STL[v] || 'Cleared') + ' ' + fmtDT(Date.now());
+    hb.title = 'History: ' + x.h.hist.length + ' entries · latest ' + (STL[v] || 'Cleared') + ' ' + fmtDT(Date.now());
     summary();
     scheduleSave();
 });
-/* ปุ่มต่าง ๆ ในแผ่นรายงาน */
+/* buttons inside the sheet */
 function focusAt(ei, ci, hi, sel) {
     const en = document.querySelector('#entries .entry[data-e="' + ei + '"]');
     if (!en) return;
@@ -663,8 +669,33 @@ function focusAt(ei, ci, hi, sel) {
     if (hi != null) root = root.querySelector('.h-row[data-h="' + hi + '"]') || root;
     const i = root.querySelector(sel); if (i) i.focus();
 }
+/* sort customer groups only by earliest start date (DD/MM); cities and hotels are never reordered or separated from their group. If the report period starts later in the year than a date's month,
+   that date is treated as next year, so a Dec - Jan report sorts correctly. Undated items keep their order, at the end. */
+function dateKey(p) {
+    const d = parseInt(p && p[0], 10), m = parseInt(p && p[1], 10);
+    if (!(d >= 1 && d <= 31 && m >= 1 && m <= 12)) return null;
+    const base = parseInt((D.period || [])[1], 10);
+    return ((base >= 1 && base <= 12 && m < base) ? 10000 : 0) + m * 100 + d;
+}
+function cityKey(c) { const k = dateKey(c.from); return k != null ? k : dateKey(c.to); }
+function entryKey(e) { let best = null; e.cities.forEach((c) => { const k = cityKey(c); if (k != null && (best == null || k < best)) best = k; }); return best; }
+function byKey(fn) {
+    return (a, b) => { const x = fn(a), y = fn(b); if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return x - y; };
+}
+function sortByDate() {
+    if (!D) return;
+    const snap = JSON.stringify(D.entries);
+    D.entries.sort(byKey(entryKey));
+    if (D.entries.every((e) => /^\d*$/.test(e.no.trim()))) D.entries.forEach((e, i) => { e.no = String(i + 1); });
+    if (JSON.stringify(D.entries) === snap) { toast('Already in date order'); return; }
+    const undated = D.entries.filter((e) => entryKey(e) == null && !entryBlank(e)).length;
+    render(); scheduleSave();
+    toast('Sorted by date' + (undated ? ' · ' + undated + ' group' + (undated === 1 ? '' : 's') + ' without dates placed last' : ''), 'Undo', () => {
+        D.entries = JSON.parse(snap); render(); scheduleSave();
+    });
+}
 function addEntry() {
-    if (D.entries.length >= MAX_E) { toast('เพิ่มได้ไม่เกิน ' + MAX_E + ' กลุ่มต่อรายงาน'); return; }
+    if (D.entries.length >= MAX_E) { toast('Maximum ' + MAX_E + ' groups per report'); return; }
     FILTER = 'all';
     D.entries.push(newEntry(String(D.entries.length + 1)));
     render(); scheduleSave();
@@ -674,7 +705,7 @@ function delEntry(ei) {
     const e = D.entries.splice(ei, 1)[0];
     if (!D.entries.length) D.entries.push(newEntry('1'));
     render(); scheduleSave();
-    if (!entryBlank(e)) toast('ลบกลุ่มแล้ว', 'ย้อนกลับ', () => {
+    if (!entryBlank(e)) toast('Group deleted', 'Undo', () => {
         if (D.entries.length === 1 && entryBlank(D.entries[0])) D.entries = [];
         D.entries.splice(Math.min(ei, D.entries.length), 0, e);
         render(); scheduleSave();
@@ -682,7 +713,7 @@ function delEntry(ei) {
 }
 function addCity(ei) {
     const e = D.entries[ei]; if (!e) return;
-    if (e.cities.length >= MAX_C) { toast('เพิ่มได้ไม่เกิน ' + MAX_C + ' เมืองต่อกลุ่ม'); return; }
+    if (e.cities.length >= MAX_C) { toast('Maximum ' + MAX_C + ' cities per group'); return; }
     FILTER = 'all';
     e.cities.push(newCity()); render(); scheduleSave();
     focusAt(ei, e.cities.length - 1, null, '.c-name');
@@ -692,7 +723,7 @@ function delCity(ei, ci) {
     const c = e.cities.splice(ci, 1)[0];
     if (!e.cities.length) e.cities.push(newCity());
     render(); scheduleSave();
-    if (!cityBlank(c)) toast('ลบเมือง ' + (c.c || '') + ' แล้ว', 'ย้อนกลับ', () => {
+    if (!cityBlank(c)) toast('City ' + (c.c || '') + ' deleted', 'Undo', () => {
         if (e.cities.length === 1 && cityBlank(e.cities[0])) e.cities = [];
         e.cities.splice(Math.min(ci, e.cities.length), 0, c);
         render(); scheduleSave();
@@ -700,7 +731,7 @@ function delCity(ei, ci) {
 }
 function addHotel(ei, ci) {
     const c = D.entries[ei] && D.entries[ei].cities[ci]; if (!c) return;
-    if (c.hotels.length >= MAX_H) { toast('เพิ่มได้ไม่เกิน ' + MAX_H + ' โรงแรมต่อเมือง'); return; }
+    if (c.hotels.length >= MAX_H) { toast('Maximum ' + MAX_H + ' hotels per city'); return; }
     FILTER = 'all';
     c.hotels.push(newHotel()); render(); scheduleSave();
     focusAt(ei, ci, c.hotels.length - 1, '.h-name');
@@ -710,7 +741,7 @@ function delHotel(ei, ci, hi) {
     const h = c.hotels.splice(hi, 1)[0];
     if (!c.hotels.length) c.hotels.push(newHotel());
     render(); scheduleSave();
-    if (!hotelBlank(h)) toast('ลบแถวแล้ว', 'ย้อนกลับ', () => {
+    if (!hotelBlank(h)) toast('Row deleted', 'Undo', () => {
         if (c.hotels.length === 1 && hotelBlank(c.hotels[0])) c.hotels = [];
         c.hotels.splice(Math.min(hi, c.hotels.length), 0, h);
         render(); scheduleSave();
@@ -730,7 +761,7 @@ $('sheet').addEventListener('click', (e) => {
     else if (a === 'hist' && x.h) openHist(ei, ci, hi);
 });
 
-/* ============ ประวัติการจอง ============ */
+/* ============ booking history ============ */
 function HH() {
     if (!HM || !D) return null;
     const e = D.entries[HM.e], c = e && e.cities[HM.c], h = c && c.hotels[HM.h];
@@ -739,7 +770,7 @@ function HH() {
 function openHist(ei, ci, hi) {
     HM = { e: ei, c: ci, h: hi };
     const sel = $('hist-status'); sel.textContent = '';
-    [['~', 'Note only (ไม่เปลี่ยนสถานะ)'], ['booked', 'Booked'], ['cfm', 'CFM'], ['fully', 'Fully'], ['cancel', 'Cancelled']].forEach(([k, l]) => { const o = el('option', null, l); o.value = k; sel.appendChild(o); });
+    [['~', 'Note only (status unchanged)'], ['booked', 'Booked'], ['cfm', 'CFM'], ['fully', 'Fully'], ['cancel', 'Cancelled']].forEach(([k, l]) => { const o = el('option', null, l); o.value = k; sel.appendChild(o); });
     $('hist-date').value = todayISO(); $('hist-note').value = '';
     renderHist();
     $('hist-modal').hidden = false;
@@ -748,21 +779,21 @@ function openHist(ei, ci, hi) {
 function renderHist() {
     const x = HH(); if (!x) { $('hist-modal').hidden = true; return; }
     const t = $('hist-title'); t.textContent = '';
-    t.append((x.h.h || '(ยังไม่ใส่ชื่อโรงแรม)') + ' ', el('small', null, (x.e.name || 'Group ' + x.e.no) + (x.c.c ? ' · ' + x.c.c : '') + ' · สถานะตอนนี้: ' + (STL[x.h.s] || '—')));
+    t.append((x.h.h || '(no hotel name)') + ' ', el('small', null, (x.e.name || 'Group ' + x.e.no) + (x.c.c ? ' · ' + x.c.c : '') + ' · current status: ' + (STL[x.h.s] || '—')));
     const box = $('hist-list'); box.textContent = '';
-    if (!x.h.hist.length) box.appendChild(el('div', 'list-empty', 'ยังไม่มีประวัติ — เปลี่ยนสถานะหรือกดบันทึกด้านล่าง'));
+    if (!x.h.hist.length) box.appendChild(el('div', 'list-empty', 'No history yet — change the status, or add an entry below'));
     x.h.hist.map((z, i) => ({ z, i })).reverse().forEach(({ z, i }) => {
         const row = el('div', 'h-item');
         const when = el('span', 'when', fmtDT(z.t));
         const what = el('span', 'what');
         what.appendChild(el('span', 'badge ' + (z.s === '~' ? 'b-note' : 'b-' + (z.s || 'none')), z.s === '~' ? 'Note' : (STL[z.s] && z.s ? STL[z.s] : 'Cleared')));
         if (z.n) what.appendChild(document.createTextNode('  ' + z.n));
-        const del = el('button', 'm-del', '×'); del.title = 'ลบรายการนี้'; del.type = 'button';
+        const del = el('button', 'm-del', '×'); del.title = 'Delete this entry'; del.type = 'button';
         del.addEventListener('click', () => {
             const h = x.h; const back = h.hist.splice(i, 1)[0]; const prev = h.s;
             recompute(h);
             render(); scheduleSave(); renderHist();
-            toast('ลบรายการประวัติแล้ว', 'ย้อนกลับ', () => { h.hist.push(back); h.hist.sort((a, b) => a.t - b.t); h.s = prev; render(); scheduleSave(); renderHist(); });
+            toast('History entry deleted', 'Undo', () => { h.hist.push(back); h.hist.sort((a, b) => a.t - b.t); h.s = prev; render(); scheduleSave(); renderHist(); });
         });
         row.append(when, what, del);
         box.appendChild(row);
@@ -771,8 +802,8 @@ function renderHist() {
 function histAdd() {
     const x = HH(); if (!x) return;
     const s = $('hist-status').value, n = $('hist-note').value.trim();
-    if (s === '~' && !n) { toast('ใส่หมายเหตุก่อนบันทึก'); return; }
-    if (x.h.hist.length >= MAX_HIST) { toast('ประวัติเต็ม (' + MAX_HIST + ' รายการ)'); return; }
+    if (s === '~' && !n) { toast('Please enter a note first'); return; }
+    if (x.h.hist.length >= MAX_HIST) { toast('History is full (' + MAX_HIST + ' entries)'); return; }
     let t = Date.now();
     const m = /^(\d{4})-(\d\d)-(\d\d)$/.exec($('hist-date').value);
     if (m) { const now = new Date(); const d = new Date(+m[1], +m[2] - 1, +m[3], now.getHours(), now.getMinutes()); if (!isNaN(d.getTime())) t = d.getTime(); }
@@ -787,11 +818,11 @@ $('hist-note').addEventListener('keydown', (e) => { if (e.key === 'Enter') histA
 $('hist-close').addEventListener('click', () => { $('hist-modal').hidden = true; HM = null; });
 $('hist-modal').addEventListener('click', (e) => { if (e.target === $('hist-modal')) { $('hist-modal').hidden = true; HM = null; } });
 
-/* ============ บันทึกอัตโนมัติ ============ */
+/* ============ auto-save ============ */
 function setMsg(msg, bad) { const el_ = $('status'); el_.textContent = msg; el_.className = 'status ' + (bad ? 'bad' : 'ok'); }
 function scheduleSave() {
     if (loading || !D) return;
-    dirty = true; setMsg('กำลังบันทึก…');
+    dirty = true; setMsg('Saving…');
     clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 350);
 }
 function saveNow() {
@@ -802,26 +833,26 @@ function saveNow() {
     if (stored && (stored.updatedAt || 0) > loadedAt) {
         docs = readStore();
         D.id = newId(); D.createdAt = Date.now();
-        D.week = (D.week ? D.week + ' ' : '') + '(กู้คืน)';
+        D.week = (D.week ? D.week + ' ' : '') + '(recovered)';
         $('week-input').value = D.week;
         try { localStorage.setItem(K.cur, D.id); } catch (e) {}
-        note = 'รายงานนี้ถูกแก้จากอีกหน้าต่างไปแล้ว จึงเก็บข้อมูลหน้านี้เป็นสำเนาใหม่';
+        note = 'This report was changed in another window, so this window\'s data was saved as a new copy';
         updateFileTitle();
     }
     D.updatedAt = Date.now();
     const doc = D;
     const ok = mutate((s) => { s[doc.id] = doc; });
     D = doc; docs[doc.id] = doc;
-    if (ok) { dirty = false; loadedAt = doc.updatedAt; setMsg('บันทึกอัตโนมัติแล้ว ' + new Date().toLocaleTimeString('en-GB')); }
-    else setMsg('บันทึกลงเครื่องไม่ได้!', true);
+    if (ok) { dirty = false; loadedAt = doc.updatedAt; setMsg('Auto-saved ' + new Date().toLocaleTimeString('en-GB')); }
+    else setMsg('Cannot save to this device!', true);
     if (note) toast(note);
-    else if (ok && lastSize > 3500000 && !sizeWarned) { sizeWarned = true; toast('ที่เก็บข้อมูลในเบราว์เซอร์ใกล้เต็ม กรุณาสำรองข้อมูลแล้วลบรายงานเก่าที่ไม่ใช้'); }
+    else if (ok && lastSize > 3500000 && !sizeWarned) { sizeWarned = true; toast('Browser storage is almost full. Please back up your data and delete old reports you no longer need'); }
     $('storage-banner').hidden = ok;
     renderList();
     if (ok && navigator.storage && navigator.storage.persist) { navigator.storage.persist().catch(() => {}); }
 }
 
-/* ============ จัดการรายงาน ============ */
+/* ============ report management ============ */
 function populate(d) {
     loading = true;
     D = d;
@@ -854,23 +885,23 @@ function duplicateDoc(id) {
     copy.week = (copy.week ? copy.week + ' ' : '') + '(copy)';
     copy.date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     mutate((s) => { s[copy.id] = copy; }); populate(copy);
-    toast('คัดลอกเป็นรายงานใหม่แล้ว (รวมประวัติการจอง)');
+    toast('Copied as a new report (including booking history)');
 }
 function sortedDocs() { return Object.values(docs).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)); }
 function deleteDoc(id) {
     saveNow();
     const d = docs[id]; if (!d) return;
-    if (!confirm('ลบรายงาน ' + (d.week || '(ไม่มีชื่อ Week)') + ' ?')) return;
+    if (!confirm('Delete report ' + (d.week || '(no week name)') + ' ?')) return;
     const backup = JSON.parse(JSON.stringify(d));
     mutate((s) => { delete s[id]; });
     if (D && id === D.id) {
         const rest = sortedDocs();
         if (rest.length) populate(rest[0]); else { const nd = blankDoc(); mutate((s) => { s[nd.id] = nd; }); populate(nd); }
     } else renderList();
-    toast('ลบแล้ว', 'ย้อนกลับ', () => { mutate((s) => { s[backup.id] = backup; }); renderList(); toast('กู้คืนแล้ว'); });
+    toast('Deleted', 'Undo', () => { mutate((s) => { s[backup.id] = backup; }); renderList(); toast('Restored'); });
 }
 
-/* ============ แถบรายการด้านซ้าย ============ */
+/* ============ sidebar list ============ */
 function periodText(d) {
     const p = d.period || [];
     return (p[0] || p[1] || p[2] || p[3]) ? (p[0] || '--') + '/' + (p[1] || '--') + ' - ' + (p[2] || '--') + '/' + (p[3] || '--') : '';
@@ -881,22 +912,22 @@ function renderList() {
     box.textContent = '';
     const hay = (d) => ((d.week || '') + ' ' + d.entries.map((e) => (e.name || '') + ' ' + e.cities.map((c) => (c.c || '') + ' ' + c.hotels.map((h) => h.h || '').join(' ')).join(' ')).join(' ')).toLowerCase();
     const list = sortedDocs().filter((d) => !q || hay(d).includes(q));
-    if (!list.length) box.appendChild(el('div', 'list-empty', q ? 'ไม่พบที่ค้นหา' : 'ยังไม่มีรายงาน'));
+    if (!list.length) box.appendChild(el('div', 'list-empty', q ? 'No results' : 'No reports yet'));
     list.forEach((d) => {
         const it = el('div', 'doc-item' + (D && d.id === D.id ? ' active' : ''));
         it.addEventListener('click', () => { if (!D || d.id !== D.id) openDoc(d.id); else toggleSidebar(false); });
         const s = stats(d);
         const top = el('div', 'di-top');
-        top.append(el('span', 'di-ref', (d.week || '').trim() || '(ยังไม่ใส่ Week)'), el('span', 'di-total', s.total ? 'CFM ' + s.cfm + '/' + s.total : ''));
+        top.append(el('span', 'di-ref', (d.week || '').trim() || '(no week name)'), el('span', 'di-total', s.total ? 'CFM ' + s.cfm + '/' + s.total : ''));
         const pt = periodText(d);
-        const nm = el('div', 'di-name', pt || 'แก้ไข ' + shortTime(d.updatedAt));
+        const nm = el('div', 'di-name', pt || 'Edited ' + shortTime(d.updatedAt));
         const meta = el('div', 'di-meta');
         const gc = d.entries.filter((e) => !entryBlank(e)).length;
         const pend = s.booked + s.fully;
-        meta.appendChild(el('span', null, gc + ' กลุ่ม' + (pend ? ' · รอ/เต็ม ' + pend : '')));
+        meta.appendChild(el('span', null, gc + ' group' + (gc === 1 ? '' : 's') + (pend ? ' · pending/full ' + pend : '')));
         const act = el('span', 'di-actions');
-        const dup = el('button', null, 'คัดลอก'); dup.addEventListener('click', (e) => { e.stopPropagation(); duplicateDoc(d.id); });
-        const del = el('button', 'del', 'ลบ'); del.addEventListener('click', (e) => { e.stopPropagation(); deleteDoc(d.id); });
+        const dup = el('button', null, 'Copy'); dup.addEventListener('click', (e) => { e.stopPropagation(); duplicateDoc(d.id); });
+        const del = el('button', 'del', 'Delete'); del.addEventListener('click', (e) => { e.stopPropagation(); deleteDoc(d.id); });
         act.append(dup, del); meta.appendChild(act);
         it.append(top, nm, meta); box.appendChild(it);
     });
@@ -904,13 +935,13 @@ function renderList() {
 }
 function toggleSidebar(open) { $('sidebar').classList.toggle('open', open); $('backdrop').classList.toggle('open', open); }
 
-/* ============ สำรอง / นำเข้า ============ */
+/* ============ backup / import ============ */
 function renderBackupNote() {
     const e = $('backup-note'); let last = 0;
     try { last = parseInt(localStorage.getItem(K.backup) || '0', 10); } catch (x) {}
     const n = Object.keys(docs).length;
-    if (!last) { e.textContent = 'ยังไม่เคยสำรองข้อมูล (' + n + ' รายงานในเครื่องนี้)'; e.className = 'sb-note warn'; }
-    else { const days = Math.floor((Date.now() - last) / 86400000); e.textContent = 'สำรองล่าสุด ' + shortTime(last) + ' · ' + n + ' รายงานในเครื่องนี้'; e.className = 'sb-note' + (days >= 7 ? ' warn' : ''); }
+    if (!last) { e.textContent = 'Never backed up (' + n + ' report' + (n === 1 ? '' : 's') + ' on this device)'; e.className = 'sb-note warn'; }
+    else { const days = Math.floor((Date.now() - last) / 86400000); e.textContent = 'Last backup ' + shortTime(last) + ' · ' + n + ' report' + (n === 1 ? '' : 's') + ' on this device'; e.className = 'sb-note' + (days >= 7 ? ' warn' : ''); }
 }
 function download(name, text) {
     const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
@@ -923,10 +954,10 @@ const safeName = (s) => String(s || '').replace(/[\\/:*?"<>|]/g, '').trim();
 function exportAll() {
     saveNow();
     const all = sortedDocs();
-    if (!all.length) { toast('ยังไม่มีรายงานให้สำรอง'); return; }
+    if (!all.length) { toast('No reports to back up'); return; }
     download('hotel-status-backup-' + stamp() + '.json', JSON.stringify({ app: 'hotel-status-report', version: 1, exportedAt: new Date().toISOString(), docs: all, cities: CITIES }, null, 1));
     try { localStorage.setItem(K.backup, String(Date.now())); } catch (e) {}
-    renderBackupNote(); toast('สำรอง ' + all.length + ' รายงานแล้ว');
+    renderBackupNote(); toast('Backed up ' + all.length + ' report' + (all.length === 1 ? '' : 's'));
 }
 function exportCurrent() {
     saveNow();
@@ -939,11 +970,11 @@ function importFile(input) {
     const rd = new FileReader();
     rd.onload = () => {
         let data;
-        try { data = JSON.parse(rd.result); } catch (e) { toast('ไฟล์นี้ไม่ใช่ไฟล์สำรองที่ถูกต้อง'); return; }
-        if (data && (data.app === 'tour-cost-summary' || data.app === 'tour-cost-walkin')) { toast('นี่คือไฟล์สำรองของ Cost Summary / Walk-in ใช้นำเข้าที่นี่ไม่ได้'); return; }
+        try { data = JSON.parse(rd.result); } catch (e) { toast('This is not a valid backup file'); return; }
+        if (data && (data.app === 'tour-cost-summary' || data.app === 'tour-cost-walkin')) { toast('This is a Cost Summary / Walk-in backup and cannot be imported here'); return; }
         const list = (Array.isArray(data) ? data : (data && data.docs)) || [];
         const incoming = (Array.isArray(list) ? list : []).map(normalizeDoc).filter(isTrue);
-        if (!incoming.length) { toast('ไม่พบรายงานในไฟล์นี้'); return; }
+        if (!incoming.length) { toast('No reports found in this file'); return; }
         saveNow();
         if (data && Array.isArray(data.cities)) { data.cities.forEach((c) => addName('city', c)); }
         incoming.forEach((d) => d.entries.forEach((e) => e.cities.forEach((c) => { if (c.c.trim()) addName('city', c.c); c.hotels.forEach((h) => { if (h.h.trim()) addName('hotel', h.h); }); })));
@@ -954,15 +985,15 @@ function importFile(input) {
                 if (!ex) { s[d.id] = d; added++; } else if ((d.updatedAt || 0) > (ex.updatedAt || 0)) { s[d.id] = d; updated++; } else skipped++;
             });
         });
-        if (!ok) { toast('บันทึกลงเครื่องไม่ได้'); return; }
+        if (!ok) { toast('Cannot save to this device'); return; }
         if (D && docs[D.id]) populate(docs[D.id]); else renderList();
-        toast('นำเข้า: เพิ่มใหม่ ' + added + ' · อัปเดต ' + updated + (skipped ? ' · ข้าม ' + skipped + ' (ในเครื่องใหม่กว่า)' : ''));
+        toast('Imported: ' + added + ' new · ' + updated + ' updated' + (skipped ? ' · ' + skipped + ' skipped (newer on this device)' : ''));
     };
-    rd.onerror = () => toast('อ่านไฟล์ไม่ได้');
+    rd.onerror = () => toast('Could not read the file');
     rd.readAsText(f);
 }
 
-/* ============ ข้อความแจ้งเตือน ============ */
+/* ============ toast ============ */
 let toastTimer = null;
 function toast(msg, actLabel, actFn) {
     $('toast-msg').textContent = msg;
@@ -974,7 +1005,7 @@ function toast(msg, actLabel, actFn) {
     toastTimer = setTimeout(() => { $('toast').hidden = true; }, actLabel ? 8000 : 3500);
 }
 
-/* ============ ชื่อบริษัท / ชื่อไฟล์ PDF ============ */
+/* ============ company name / PDF file name ============ */
 const companyInput = $('company-name-input');
 function fitCompanyName() {
     companyInput.style.fontSize = '';
@@ -991,7 +1022,7 @@ function updateFileTitle() {
 }
 function printDoc() { saveNow(); updateFileTitle(); window.print(); }
 
-/* ============ รายชื่อโรงแรม (ใช้ร่วมกับ Cost Summary: คีย์ tcs:v1:master หมวด sec-acc) / เมือง ============ */
+/* ============ hotel list (shared with Cost Summary: key tcs:v1:master, section sec-acc) / cities ============ */
 function normMaster(o) {
     const out = {};
     MKEYS.forEach((id) => {
@@ -1047,7 +1078,7 @@ function restoreName(kind, it) {
     else addName('city', it.n);
 }
 let mKind = 'hotel';
-const MLABEL = { hotel: 'โรงแรม', city: 'เมือง' };
+const MLABEL = { hotel: 'Hotels', city: 'Cities' };
 const sortTh = (arr) => arr.slice().sort((a, b) => a.localeCompare(b, 'th'));
 function openManage() { MASTER = readMaster(); CITIES = readCities(); renderManage(); $('manage-modal').hidden = false; toggleSidebar(false); setTimeout(() => $('manage-new').focus(), 50); }
 function closeManage() { $('manage-modal').hidden = true; }
@@ -1060,7 +1091,7 @@ function renderManage() {
     });
     const box = $('manage-list'); box.textContent = '';
     const items = sortTh(listOf(mKind));
-    if (!items.length) box.appendChild(el('div', 'list-empty', 'ยังไม่มีรายชื่อในหมวดนี้'));
+    if (!items.length) box.appendChild(el('div', 'list-empty', 'Nothing in this list yet'));
     items.forEach((name) => {
         const row = el('div', 'm-row');
         const i = document.createElement('input'); i.type = 'text'; i.value = name; i.autocomplete = 'off';
@@ -1068,13 +1099,13 @@ function renderManage() {
         i.addEventListener('change', () => {
             const nn = i.value.trim();
             if (!nn) { i.value = name; return; }
-            if (nn.toLowerCase() !== name.toLowerCase() && listOf(kind).some((x) => x.toLowerCase() === nn.toLowerCase())) { toast('มีชื่อนี้อยู่แล้ว'); i.value = name; return; }
+            if (nn.toLowerCase() !== name.toLowerCase() && listOf(kind).some((x) => x.toLowerCase() === nn.toLowerCase())) { toast('That name already exists'); i.value = name; return; }
             renameName(kind, name, nn); renderManage();
         });
-        const del = el('button', 'm-del', '×'); del.title = 'ลบออกจากรายการ'; del.type = 'button';
+        const del = el('button', 'm-del', '×'); del.title = 'Remove from list'; del.type = 'button';
         del.addEventListener('click', () => {
             const backup = removeName(kind, name); renderManage();
-            toast('ลบ “' + name + '” แล้ว', 'ย้อนกลับ', () => { restoreName(kind, backup); renderManage(); });
+            toast('Removed “' + name + '”', 'Undo', () => { restoreName(kind, backup); renderManage(); });
         });
         row.append(i, del); box.appendChild(row);
     });
@@ -1084,14 +1115,14 @@ function manageAddOne() {
     if (!name) return;
     const added = addName(mKind, name);
     i.value = ''; renderManage();
-    toast(added ? 'เพิ่ม “' + name + '” แล้ว' : 'มีชื่อนี้อยู่แล้ว');
+    toast(added ? 'Added “' + name + '”' : 'That name already exists');
     i.focus();
 }
 function manageAddBulk() {
     const lines = $('manage-bulk').value.split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
     let n = 0; lines.forEach((l) => { if (addName(mKind, l)) n++; });
     $('manage-bulk').value = ''; renderManage();
-    toast('เพิ่ม ' + n + ' รายการ' + (lines.length - n ? ' (ซ้ำ ' + (lines.length - n) + ')' : ''));
+    toast('Added ' + n + ' item' + (n === 1 ? '' : 's') + (lines.length - n ? ' (' + (lines.length - n) + ' duplicate)' : ''));
 }
 $('btn-manage').addEventListener('click', openManage);
 $('manage-close').addEventListener('click', closeManage);
@@ -1100,7 +1131,7 @@ $('manage-add').addEventListener('click', manageAddOne);
 $('manage-new').addEventListener('keydown', (e) => { if (e.key === 'Enter') manageAddOne(); });
 $('manage-bulk-add').addEventListener('click', manageAddBulk);
 
-/* ============ รายการแนะนำขณะพิมพ์ (autocomplete) ============ */
+/* ============ autocomplete ============ */
 const ac = { el: null, input: null, items: [], idx: -1 };
 function acEnsure() {
     if (ac.el) return;
@@ -1113,8 +1144,8 @@ function acOptions(input) {
     const exact = all.some((n) => n.toLowerCase() === q);
     const list = (exact || !q) ? all : all.filter((n) => n.toLowerCase().includes(q));
     const items = sortTh(list).slice(0, 60).map((n) => ({ label: n, val: n }));
-    if (q && !exact) items.push({ label: '+ เพิ่ม “' + raw + '” เข้ารายการ', val: raw, add: true });
-    if (!items.length) items.push({ label: 'ยังไม่มีรายชื่อ พิมพ์ชื่อแล้วเลือก “+ เพิ่ม”', hint: true });
+    if (q && !exact) items.push({ label: '+ Add “' + raw + '” to the list', val: raw, add: true });
+    if (!items.length) items.push({ label: 'List is empty — type a name, then choose “+ Add”', hint: true });
     return items;
 }
 function acShow(input) {
@@ -1136,7 +1167,7 @@ function acPick(i) {
     if (!it || it.hint || !input) return;
     const kind = input.dataset.ac;
     input.value = it.val;
-    if (it.add) { addName(kind, it.val); toast('เพิ่ม “' + it.val + '” เข้ารายการแล้ว'); }
+    if (it.add) { addName(kind, it.val); toast('Added “' + it.val + '” to the list'); }
     input.dispatchEvent(new Event('input', { bubbles: true }));
     acHide();
     const scope = kind === 'hotel' ? input.closest('.h-row') : input.closest('.city');
@@ -1160,7 +1191,7 @@ document.addEventListener('keydown', (e) => {
 });
 window.addEventListener('resize', acHide);
 
-/* ============ ธีม + ผูกเหตุการณ์ ============ */
+/* ============ theme + event wiring ============ */
 function currentTheme() { return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'; }
 function applyTheme(t) {
     if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); else document.documentElement.removeAttribute('data-theme');
@@ -1178,8 +1209,8 @@ $('import-file').addEventListener('change', (e) => importFile(e.target));
 $('btn-print').addEventListener('click', printDoc);
 $('btn-menu').addEventListener('click', () => toggleSidebar(true));
 $('backdrop').addEventListener('click', () => toggleSidebar(false));
-window.addEventListener('error', (e) => { toast('เกิดข้อผิดพลาด: ' + (e.message || 'ไม่ทราบสาเหตุ') + ' (ข้อมูลที่บันทึกไว้แล้วไม่เสียหาย ลองรีเฟรชหน้า)'); });
-window.addEventListener('unhandledrejection', () => { toast('เกิดข้อผิดพลาดบางอย่าง ข้อมูลที่บันทึกไว้แล้วไม่เสียหาย'); });
+window.addEventListener('error', (e) => { toast('Error: ' + (e.message || 'unknown') + ' (saved data is safe — try refreshing the page)'); });
+window.addEventListener('unhandledrejection', () => { toast('Something went wrong; saved data is safe'); });
 window.addEventListener('beforeprint', () => { updateFileTitle(); fitCompanyName(); });
 window.addEventListener('resize', fitCompanyName);
 window.addEventListener('load', fitCompanyName);
@@ -1190,18 +1221,18 @@ window.addEventListener('storage', (e) => {
     if (e.key === K.docs) {
         docs = readStore();
         const cur = D && docs[D.id];
-        if (cur && !dirty && (cur.updatedAt || 0) > loadedAt) { populate(cur); toast('อัปเดตรายงานนี้ตามที่แก้จากอีกหน้าต่างแล้ว'); } else renderList();
+        if (cur && !dirty && (cur.updatedAt || 0) > loadedAt) { populate(cur); toast('Updated with changes made in another window'); } else renderList();
     }
     if (e.key === K.master) MASTER = readMaster();
     if (e.key === K.cities) CITIES = readCities();
 });
-document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveNow(); toast('บันทึกแล้ว'); } });
+document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveNow(); toast('Saved'); } });
 if (window.matchMedia) {
     const mq = matchMedia('(prefers-color-scheme: dark)');
     if (mq.addEventListener) mq.addEventListener('change', (e) => { let s = null; try { s = localStorage.getItem(K.theme); } catch (_) {} if (!s) applyTheme(e.matches ? 'dark' : 'light'); });
 }
 
-/* ============ เริ่มต้น ============ */
+/* ============ init ============ */
 (function init() {
     applyTheme(currentTheme());
     docs = readStore();
@@ -1214,7 +1245,7 @@ if (window.matchMedia) {
     if (id && docs[id]) populate(docs[id]);
     else if (Object.keys(docs).length) populate(sortedDocs()[0]);
     else { const d = blankDoc(); mutate((s) => { s[d.id] = d; }); populate(d); }
-    setMsg(storageOk ? 'พร้อมใช้งาน · บันทึกอัตโนมัติ' : 'บันทึกลงเครื่องไม่ได้!', !storageOk);
+    setMsg(storageOk ? 'Ready · auto-save on' : 'Cannot save to this device!', !storageOk);
 })();
 </script>
 </body>
