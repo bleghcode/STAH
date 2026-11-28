@@ -131,6 +131,8 @@
     .c-dates b { margin-right: .35rem; }
     .c-dates .date-box { width: 1.8rem; }
     .d-end { display: inline-flex; align-items: center; gap: .1rem; } .d-sep { padding: 0 .25rem; }
+    .c-dates.bad .date-box { color: #b91c1c; border-bottom-color: #ef4444; }
+    .d-warn { color: #b45309; margin-left: .4rem; cursor: help; }
     .btn-add { background: var(--act); color: var(--brand-t); border: 1px solid var(--brand-t); border-radius: 4px; padding: .1rem .55rem; font-size: .75rem; }
     .btn-add:hover { background: var(--tint); }
 
@@ -242,6 +244,9 @@
         .m-item:has(input:placeholder-shown) { display: none; }
         .entry-meta:not(:has(input:not(:placeholder-shown))) { display: none; }
         .entry { break-inside: auto; }
+        .entry-bar, .entry-meta, .city-bar { break-after: avoid; page-break-after: avoid; }
+        .c-dates.bad .date-box { color: inherit; border-bottom-color: transparent; }
+        .d-warn { display: none !important; }
     }
 </style>
 </head>
@@ -324,7 +329,7 @@
         <div class="help no-print">
             💡 <b>How to use:</b> 1 report = 1 week · <b>+ ADD NEW GROUP</b> adds a customer group · inside a group, click <b>+ Add city</b> (a group can have several cities, e.g. Bangkok / Pattaya / Phuket), then <b>+ Hotel</b> to add hotels
             <br>Pick a Status for each hotel (Booked = requested, waiting for reply · CFM = confirmed · Fully = hotel is full · Cancelled). The date and time of every change is logged automatically · click <b>🕘</b> to view or add booking-history notes (history is not printed to PDF)
-            <br><b>↕ Sort by date</b> orders the customer groups by their earliest start date — handy when you enter bookings out of order. Cities and hotels stay inside their group, unchanged; numbers are renumbered 1, 2, 3… unless you typed your own · The filter buttons at the top (Booked / CFM / Fully …) show or print only hotels with that status · anything you delete can be restored with “Undo” · ⚠ data lives in this browser only — use “Back up all data” regularly
+            <br><b>↕ Sort by date</b> orders the customer groups by their earliest start date, and the cities inside each group by their own dates — handy when you enter bookings out of order. Hotels always stay with their city and keep their order; numbers are renumbered 1, 2, 3… unless you typed your own · The filter buttons at the top (Booked / CFM / Fully …) show or print only hotels with that status · anything you delete can be restored with “Undo” · ⚠ data lives in this browser only — use “Back up all data” regularly
         </div>
     </main>
 </div>
@@ -448,6 +453,7 @@ function stats(d) {
 }
 function recompute(h) { const a = h.hist.filter((x) => x.s !== '~'); if (a.length) h.s = a[a.length - 1].s; }
 
+const clean = (v) => str(v).replace(/\s+/g, ' ').trim();
 function pair(a) { a = Array.isArray(a) ? a : []; return [str(a[0]).slice(0, 2), str(a[1]).slice(0, 2)]; }
 function normalizeDoc(x) {
     if (!x || typeof x !== 'object' || !Array.isArray(x.entries)) return null;
@@ -460,14 +466,14 @@ function normalizeDoc(x) {
     };
     x.entries.slice(0, MAX_E).forEach((e) => {
         if (!e || typeof e !== 'object') return;
-        const ne = { no: str(e.no), name: str(e.name), pax: str(e.pax), remark: str(e.remark), cities: [] };
+        const ne = { no: str(e.no), name: clean(e.name), pax: str(e.pax), remark: str(e.remark), cities: [] };
         (Array.isArray(e.cities) ? e.cities : []).slice(0, MAX_C).forEach((c) => {
             if (!c || typeof c !== 'object') return;
-            const nc = { c: str(c.c), from: pair(c.from), to: pair(c.to), hotels: [] };
+            const nc = { c: clean(c.c), from: pair(c.from), to: pair(c.to), hotels: [] };
             (Array.isArray(c.hotels) ? c.hotels : []).slice(0, MAX_H).forEach((h) => {
                 if (!h || typeof h !== 'object') return;
                 const s = str(h.s);
-                const nh = { h: str(h.h), n: str(h.n), s: has(STL, s) ? s : '', hist: [] };
+                const nh = { h: clean(h.h), n: str(h.n).trim(), s: has(STL, s) ? s : '', hist: [] };
                 (Array.isArray(h.hist) ? h.hist : []).slice(0, MAX_HIST).forEach((z) => {
                     if (!z || typeof z !== 'object') return;
                     const zs = str(z.s);
@@ -551,7 +557,27 @@ function render() {
     D.entries.forEach((e, i) => box.appendChild(buildEntry(e, i)));
     summary();
 }
+/* returns a warning text when a city's dates look wrong, otherwise '' */
+function dateProblem(c) {
+    const n = (a) => [parseInt(a[0], 10), parseInt(a[1], 10)];
+    const [fd, fm] = n(c.from), [td, tm] = n(c.to);
+    const bad = (d, m) => (!isNaN(d) && (d < 1 || d > 31)) || (!isNaN(m) && (m < 1 || m > 12));
+    if (bad(fd, fm) || bad(td, tm)) return 'Invalid date (day must be 1-31, month 1-12)';
+    if ([fd, fm, td, tm].some(isNaN)) return '';
+    const diff = (tm * 100 + td) - (fm * 100 + fd);
+    if (diff < 0 && fm - tm < 6) return 'End date is before the start date';
+    return '';
+}
 function updateSums() {
+    document.querySelectorAll('#entries .city').forEach((cd) => {
+        const en = cd.closest('.entry'); const e = en && D.entries[+en.dataset.e]; const c = e && e.cities[+cd.dataset.c];
+        const msg = c ? dateProblem(c) : '';
+        const box = cd.querySelector('.c-dates');
+        box.classList.toggle('bad', !!msg); box.title = msg;
+        let w = box.querySelector('.d-warn');
+        if (msg && !w) { w = el('span', 'd-warn no-print', '⚠'); box.appendChild(w); }
+        if (w) { w.title = msg; w.hidden = !msg; }
+    });
     document.querySelectorAll('#entries .entry').forEach((en) => {
         const e = D.entries[+en.dataset.e]; if (!e) return;
         let t = 0, c = 0;
@@ -582,7 +608,7 @@ function summary() {
         f.appendChild(b);
     });
     const sb = el('button', 'chip sort-chip', '↕ Sort by date'); sb.type = 'button';
-    sb.title = 'Sort customer groups by their earliest start date (cities and hotels stay inside their group, in the order you entered them)';
+    sb.title = 'Sort customer groups by earliest start date, and the cities inside each group by their dates (hotels always stay with their city)';
     sb.addEventListener('click', sortByDate);
     f.appendChild(sb);
     updateSums();
@@ -660,6 +686,15 @@ $('sheet').addEventListener('change', (e) => {
     summary();
     scheduleSave();
 });
+/* tidy names when leaving a field: trim and collapse double spaces */
+$('sheet').addEventListener('focusout', (e) => {
+    const t = e.target;
+    if (!D || loading || !t.dataset || !t.dataset.l || !['name', 'c', 'h'].includes(t.dataset.f)) return;
+    const v = clean(t.value);
+    if (v === t.value) return;
+    t.value = v;
+    t.dispatchEvent(new Event('input', { bubbles: true }));
+});
 /* buttons inside the sheet */
 function focusAt(ei, ci, hi, sel) {
     const en = document.querySelector('#entries .entry[data-e="' + ei + '"]');
@@ -669,7 +704,7 @@ function focusAt(ei, ci, hi, sel) {
     if (hi != null) root = root.querySelector('.h-row[data-h="' + hi + '"]') || root;
     const i = root.querySelector(sel); if (i) i.focus();
 }
-/* sort customer groups only by earliest start date (DD/MM); cities and hotels are never reordered or separated from their group. If the report period starts later in the year than a date's month,
+/* sort customer groups by earliest start date (DD/MM), and the cities inside each group by their own dates; hotels always stay with their city. If the report period starts later in the year than a date's month,
    that date is treated as next year, so a Dec - Jan report sorts correctly. Undated items keep their order, at the end. */
 function dateKey(p) {
     const d = parseInt(p && p[0], 10), m = parseInt(p && p[1], 10);
@@ -685,6 +720,7 @@ function byKey(fn) {
 function sortByDate() {
     if (!D) return;
     const snap = JSON.stringify(D.entries);
+    D.entries.forEach((e) => e.cities.sort(byKey(cityKey)));
     D.entries.sort(byKey(entryKey));
     if (D.entries.every((e) => /^\d*$/.test(e.no.trim()))) D.entries.forEach((e, i) => { e.no = String(i + 1); });
     if (JSON.stringify(D.entries) === snap) { toast('Already in date order'); return; }
